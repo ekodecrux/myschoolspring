@@ -21,10 +21,7 @@ public class ImageController {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-    /**
-     * GET /api/rest/images/list
-     * List resource images with filters and pagination
-     */
+        // List resource images with filters and pagination
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> listImages(
             @RequestParam(required = false) String category,
@@ -51,10 +48,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/images/upload
-     * Upload a resource image to R2
-     */
+        // Upload a resource image to R2
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadImage(
             @RequestParam("file") MultipartFile file,
@@ -80,10 +74,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/images/{imageId}/approve
-     * Approve or reject an image (Super Admin only)
-     */
+        // Approve or reject an image (Super Admin only)
     @PostMapping("/{imageId}/approve")
     public ResponseEntity<Map<String, Object>> approveRejectImage(
             @PathVariable String imageId,
@@ -93,10 +84,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * DELETE /api/rest/images/{imageId}
-     * Delete a resource image (Super Admin only)
-     */
+        // Delete a resource image (Super Admin only)
     @DeleteMapping("/{imageId}")
     public ResponseEntity<Map<String, Object>> deleteImage(
             @PathVariable String imageId,
@@ -105,20 +93,14 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/images/my
-     * List user's personal images
-     */
+        // List user's personal images
     @GetMapping("/my")
     public ResponseEntity<Map<String, Object>> listMyImages(@AuthenticationPrincipal User currentUser) {
         Map<String, Object> result = imageService.listMyImages(currentUser);
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/images/my/upload
-     * Upload to user's personal image library
-     */
+        // Upload to user's personal image library
     @PostMapping("/my/upload")
     public ResponseEntity<Map<String, Object>> uploadMyImage(
             @RequestParam("file") MultipartFile file,
@@ -130,10 +112,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * DELETE /api/rest/images/my/{imageId}
-     * Delete user's own image
-     */
+        // Delete user's own image
     @DeleteMapping("/my/{imageId}")
     public ResponseEntity<Map<String, Object>> deleteMyImage(
             @PathVariable String imageId,
@@ -142,10 +121,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/images/r2/list
-     * List images from R2 folder structure
-     */
+        // List images from R2 folder structure
     @GetMapping("/r2/list")
     public ResponseEntity<Map<String, Object>> listR2Images(
             @RequestParam(required = false) String prefix) {
@@ -153,10 +129,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/images/filters
-     * Get distinct filter values for image bank
-     */
+        // Get distinct filter values for image bank
     @GetMapping("/filters")
     public ResponseEntity<Map<String, Object>> getImageFilters(
             @RequestParam(required = false) String category,
@@ -165,10 +138,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/images/proxy
-     * Proxy image requests to avoid CORS issues
-     */
+        // Proxy image requests to avoid CORS issues
     @GetMapping("/proxy")
     public ResponseEntity<byte[]> proxyImage(@RequestParam String url) {
         try {

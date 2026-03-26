@@ -16,20 +16,14 @@ public class DigitalBoardController {
     @Autowired
     private DigitalBoardService digitalBoardService;
 
-    /**
-     * GET /api/rest/digital-board/list
-     * List all digital boards for current user
-     */
+        // List all digital boards for current user
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> listBoards(@AuthenticationPrincipal User currentUser) {
         Map<String, Object> result = digitalBoardService.listBoards(currentUser);
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/digital-board/{boardId}
-     * Get a specific digital board
-     */
+        // Get a specific digital board
     @GetMapping("/{boardId}")
     public ResponseEntity<Map<String, Object>> getBoard(
             @PathVariable String boardId,
@@ -38,10 +32,7 @@ public class DigitalBoardController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/digital-board/save
-     * Save or update a digital board
-     */
+        // Save or update a digital board
     @PostMapping("/save")
     public ResponseEntity<Map<String, Object>> saveBoard(
             @RequestBody Map<String, Object> body,
@@ -50,10 +41,7 @@ public class DigitalBoardController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * DELETE /api/rest/digital-board/{boardId}
-     * Delete a digital board
-     */
+        // Delete a digital board
     @DeleteMapping("/{boardId}")
     public ResponseEntity<Map<String, Object>> deleteBoard(
             @PathVariable String boardId,

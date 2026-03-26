@@ -18,10 +18,7 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
-    /**
-     * GET /api/rest/admin/dashboard
-     * Get platform-wide stats (Super Admin only)
-     */
+        // Get platform-wide stats (Super Admin only)
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboardStats(@AuthenticationPrincipal User currentUser) {
@@ -29,10 +26,7 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/admin/bulk-upload-users
-     * Bulk upload users from CSV/Excel data
-     */
+        // Bulk upload users from CSV/Excel data
     @PostMapping("/bulk-upload-users")
     public ResponseEntity<Map<String, Object>> bulkUploadUsers(
             @RequestBody List<Map<String, Object>> users,
@@ -41,10 +35,7 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * PUT /api/rest/admin/templates/{templateId}
-     * Update a system template (Super Admin only)
-     */
+        // Update a system template (Super Admin only)
     @PutMapping("/templates/{templateId}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> updateSystemTemplate(

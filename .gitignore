@@ -1,54 +1,32 @@
-# ===========================
-# Java / Spring Boot
-# ===========================
+# Java / Maven
 target/
 *.class
 *.jar
 *.war
 *.ear
-*.nar
-*.zip
-*.tar.gz
-*.rar
-hs_err_pid*
-
-# Maven
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+hs_err_pid*
 
-# Gradle
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-# Spring Boot
+# Spring Boot local overrides
 backend/src/main/resources/application-local.yml
 backend/src/main/resources/application-prod.yml
 backend/src/main/resources/application-secrets.yml
 
-# ===========================
-# Node.js / React Frontend
-# ===========================
+# Node / React
 node_modules/
 frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 .npm
-
-# Build output
 frontend/build/
 frontend/dist/
 build/
 dist/
 
-# ===========================
-# Environment / Secrets
-# ===========================
+# Env / secrets
 .env
 .env.local
 .env.development.local
@@ -57,36 +35,22 @@ dist/
 *.env
 secrets/
 
-# ===========================
-# IDE / Editor
-# ===========================
+# IDE
 .idea/
 *.iml
 *.iws
 *.ipr
 .vscode/
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
 .DS_Store
 Thumbs.db
 
-# ===========================
 # Logs
-# ===========================
 logs/
 *.log
 log/
 
-# ===========================
-# Docker
-# ===========================
-.docker/
-
-# ===========================
-# Uploads / Generated files
-# ===========================
+# Uploads
 uploads/
 pdf_cache/

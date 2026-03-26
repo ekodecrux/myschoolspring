@@ -14,8 +14,8 @@
     <groupId>com.myschool</groupId>
     <artifactId>myschool-backend</artifactId>
     <version>2.0.0</version>
-    <name>MySchool Backend</name>
-    <description>MySchool API - Spring Boot Backend</description>
+    <name>myschool-backend</name>
+    <description>MySchool backend service</description>
     <packaging>jar</packaging>
 
     <properties>
@@ -41,7 +41,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Spring Boot Core -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -58,14 +57,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-
-        <!-- MongoDB -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
 
-        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -84,7 +80,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- AWS SDK v2 for Cloudflare R2 (S3-compatible) -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
@@ -94,21 +89,17 @@
             <artifactId>url-connection-client</artifactId>
         </dependency>
 
-        <!-- Stripe Payment -->
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
             <version>${stripe.version}</version>
         </dependency>
-
-        <!-- Razorpay Payment -->
         <dependency>
             <groupId>com.razorpay</groupId>
             <artifactId>razorpay-java</artifactId>
             <version>${razorpay.version}</version>
         </dependency>
 
-        <!-- Apache POI for Excel/CSV processing -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
@@ -125,27 +116,22 @@
             <version>5.9</version>
         </dependency>
 
-        <!-- Apache PDFBox for PDF thumbnail generation -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>${pdfbox.version}</version>
         </dependency>
 
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
-        <!-- Jackson for JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -157,13 +143,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- HTTP Client for proxying requests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
-
-        <!-- Compression / GZip support (built into Spring Boot) -->
     </dependencies>
 
     <build>

@@ -18,20 +18,14 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    /**
-     * GET /api/rest/users/details
-     * Get current logged-in user details
-     */
+        // Get current logged-in user details
     @GetMapping("/details")
     public ResponseEntity<Map<String, Object>> getUserDetails(@AuthenticationPrincipal User currentUser) {
         Map<String, Object> result = userService.getUserDetails(currentUser);
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * PUT /api/rest/users/update
-     * Update user details (name, mobile, address etc.)
-     */
+        // Update user details (name, mobile, address etc.)
     @PutMapping("/update")
     public ResponseEntity<Map<String, Object>> updateUserDetails(
             @RequestBody Map<String, Object> body,
@@ -40,10 +34,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/users/list
-     * List users (filtered by role, school, teacher)
-     */
+        // List users (filtered by role, school, teacher)
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> listUsers(
             @RequestParam(required = false) String role,
@@ -53,10 +44,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/rest/users/search
-     * Search users by query string
-     */
+        // Search users by query string
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchUsers(
             @RequestParam String query,
@@ -67,10 +55,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/users/add
-     * Add a new user (teacher/student/parent) by admin or teacher
-     */
+        // Add a new user (teacher/student/parent) by admin or teacher
     @PostMapping("/add")
     public ResponseEntity<Map<String, Object>> addUser(
             @Valid @RequestBody RegisterRequest request,
@@ -79,10 +64,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * POST /api/rest/users/updateCredits
-     * Update user credits (add/remove/set)
-     */
+        // Update user credits (add/remove/set)
     @PostMapping("/updateCredits")
     public ResponseEntity<Map<String, Object>> updateCredits(
             @RequestBody Map<String, Object> body,
@@ -91,10 +73,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * PATCH /api/rest/users/{userId}/disable
-     * Enable/Disable a user account
-     */
+        // Enable/Disable a user account
     @PatchMapping("/{userId}/disable")
     public ResponseEntity<Map<String, Object>> disableAccount(
             @PathVariable String userId,

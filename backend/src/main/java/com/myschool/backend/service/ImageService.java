@@ -35,9 +35,7 @@ public class ImageService {
     @Autowired private StorageService storageService;
     @Autowired private MongoTemplate mongoTemplate;
 
-    /**
-     * List resource images with filtering and pagination (mirrors FastAPI /images/list)
-     */
+        // List resource images with filtering and pagination (mirrors FastAPI /images/list)
     public Map<String, Object> listImages(
             String category, String subcategory, String menu, String subMenu,
             String subject, String subTopic, String bookType, String unitLesson,
@@ -99,9 +97,7 @@ public class ImageService {
         );
     }
 
-    /**
-     * Upload image to R2 and save metadata (mirrors FastAPI /images/upload)
-     */
+        // Upload image to R2 and save metadata (mirrors FastAPI /images/upload)
     public Map<String, Object> uploadImage(
             MultipartFile file, String category, String subcategory, String menu,
             String subMenu, String subject, String subTopic, String bookType,
@@ -183,9 +179,7 @@ public class ImageService {
         );
     }
 
-    /**
-     * Approve or reject an image (Super Admin only)
-     */
+        // Approve or reject an image (Super Admin only)
     public Map<String, Object> approveRejectImage(String imageId, Map<String, Object> body, User currentUser) {
         if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
@@ -217,9 +211,7 @@ public class ImageService {
         return Map.of("message", "Image " + action + "d successfully");
     }
 
-    /**
-     * Delete a resource image
-     */
+        // Delete a resource image
     public Map<String, Object> deleteImage(String imageId, User currentUser) {
         if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
@@ -237,9 +229,7 @@ public class ImageService {
         return Map.of("message", "Image deleted successfully");
     }
 
-    /**
-     * List user's own uploaded images (My Images)
-     */
+        // List user's own uploaded images (My Images)
     public Map<String, Object> listMyImages(User currentUser) {
         List<MyImage> images = myImageRepository.findByUserId(currentUser.getId());
         return Map.of(
@@ -248,9 +238,7 @@ public class ImageService {
         );
     }
 
-    /**
-     * Upload to user's personal image library
-     */
+        // Upload to user's personal image library
     public Map<String, Object> uploadMyImage(MultipartFile file, String category, String tags,
                                               String title, User currentUser) {
         if (file == null || file.isEmpty()) {
@@ -300,9 +288,7 @@ public class ImageService {
         );
     }
 
-    /**
-     * Delete user's own image
-     */
+        // Delete user's own image
     public Map<String, Object> deleteMyImage(String imageId, User currentUser) {
         MyImage image = myImageRepository.findByIdAndUserId(imageId, currentUser.getId())
                 .orElseThrow(() -> new AppException("Image not found", HttpStatus.NOT_FOUND));
@@ -319,17 +305,13 @@ public class ImageService {
         return Map.of("message", "Image deleted successfully");
     }
 
-    /**
-     * List images from R2 folder structure (mirrors FastAPI /images/r2/list)
-     */
+        // List images from R2 folder structure (mirrors FastAPI /images/r2/list)
     public Map<String, Object> listR2Images(String prefix) {
         List<Map<String, Object>> objects = storageService.listObjects(prefix != null ? prefix : "");
         return Map.of("data", objects, "total", objects.size());
     }
 
-    /**
-     * Get distinct filter values for image bank (mirrors FastAPI /images/filters)
-     */
+        // Get distinct filter values for image bank (mirrors FastAPI /images/filters)
     public Map<String, Object> getImageFilters(String category, String subcategory) {
         Query query = new Query(Criteria.where("status").is("approved"));
         if (category != null && !category.isEmpty())

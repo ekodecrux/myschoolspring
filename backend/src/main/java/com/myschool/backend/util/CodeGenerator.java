@@ -15,9 +15,7 @@ public class CodeGenerator {
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Random random = new Random();
 
-    /**
-     * Generate a unique code with optional prefix (e.g., "SCH123456")
-     */
+        // Generate a unique code with optional prefix (e.g., "SCH123456")
     public static String generateCode(String prefix, int length) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
@@ -26,9 +24,7 @@ public class CodeGenerator {
         return (prefix != null && !prefix.isEmpty()) ? prefix + sb : sb.toString();
     }
 
-    /**
-     * Generate a secure random password of given length
-     */
+        // Generate a secure random password of given length
     public static String generatePassword(int length) {
         // Ensure at least one of each type
         StringBuilder password = new StringBuilder();
@@ -54,9 +50,7 @@ public class CodeGenerator {
         return new String(chars);
     }
 
-    /**
-     * Generate a 6-digit OTP
-     */
+        // Generate a 6-digit OTP
     public static String generateOtp() {
         StringBuilder otp = new StringBuilder();
         for (int i = 0; i < 6; i++) {

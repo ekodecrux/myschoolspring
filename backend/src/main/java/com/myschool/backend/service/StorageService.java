@@ -71,9 +71,7 @@ public class StorageService {
         return (baseUrl != null && !baseUrl.isEmpty()) ? baseUrl : publicUrl;
     }
 
-    /**
-     * List objects in R2 bucket under a given prefix
-     */
+        // List objects in R2 bucket under a given prefix
     public List<Map<String, Object>> listObjects(String prefix) {
         if (s3Client == null) return new ArrayList<>();
 
@@ -108,9 +106,7 @@ public class StorageService {
         }
     }
 
-    /**
-     * Upload a file to R2
-     */
+        // Upload a file to R2
     public String uploadObject(String key, byte[] content, String contentType) {
         if (s3Client == null) throw new RuntimeException("R2 storage not configured");
 
@@ -129,9 +125,7 @@ public class StorageService {
         }
     }
 
-    /**
-     * Delete an object from R2
-     */
+        // Delete an object from R2
     public boolean deleteObject(String key) {
         if (s3Client == null) return false;
 
@@ -148,16 +142,12 @@ public class StorageService {
         }
     }
 
-    /**
-     * Get public URL for a key
-     */
+        // Get public URL for a key
     public String getPublicUrl(String key) {
         return getBaseUrl() + "/" + key;
     }
 
-    /**
-     * Clear cache
-     */
+        // Clear cache
     public void clearCache() {
         r2Cache.clear();
     }
