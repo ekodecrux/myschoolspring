@@ -1,0 +1,73 @@
+server:
+  port: 8000
+  compression:
+    enabled: true
+    min-response-size: 500
+
+spring:
+  application:
+    name: myschool-backend
+  data:
+    mongodb:
+      uri: ${MONGO_URL:mongodb://localhost:27017}
+      database: ${DB_NAME:myschool_db}
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:}
+  algorithm: ${JWT_ALGORITHM:HS256}
+  access-token-expire-minutes: ${ACCESS_TOKEN_EXPIRE_MINUTES:60}
+  refresh-token-expire-days: ${REFRESH_TOKEN_EXPIRE_DAYS:7}
+
+# Email Configuration
+email:
+  from: ${EMAIL_FROM:}
+
+# Cloudflare R2 Configuration
+r2:
+  account-id: ${R2_ACCOUNT_ID:}
+  access-key: ${R2_ACCESS_KEY_ID:}
+  secret-key: ${R2_SECRET_ACCESS_KEY:}
+  bucket: ${R2_BUCKET_NAME:}
+  endpoint: ${R2_ENDPOINT:}
+  public-url: ${R2_PUBLIC_URL:}
+  base-url: ${R2_BASE_URL:${R2_PUBLIC_URL:}}
+
+# Stripe Configuration
+stripe:
+  api-key: ${STRIPE_API_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
+# Razorpay Configuration
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+
+# CORS Configuration
+cors:
+  origins: ${CORS_ORIGINS:*}
+
+# Upload directory
+upload:
+  dir: ${UPLOAD_DIR:/app/uploads}
+
+# Logging
+logging:
+  level:
+    com.myschool: INFO
+    org.springframework.security: WARN

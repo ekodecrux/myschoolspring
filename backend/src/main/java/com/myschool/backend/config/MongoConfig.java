@@ -1,0 +1,13 @@
+package com.myschool.backend.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
+@Configuration
+@EnableMongoAuditing
+@EnableMongoRepositories(basePackages = "com.myschool.backend.repository")
+public class MongoConfig {
+    // Spring Boot auto-configures MongoDB from application.yml
+    // This class enables auditing and repository scanning
+}
