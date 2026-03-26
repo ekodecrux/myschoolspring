@@ -36,9 +36,9 @@ public class AuthService {
         // Build query based on email and optional school code
         Optional<User> userOpt;
         if (request.getSchoolCode() != null && !request.getSchoolCode().isEmpty()) {
-            userOpt = userRepository.findByEmailAndSchoolCode(request.getUsername(), request.getSchoolCode());
+            userOpt = userRepository.findByEmailAndSchoolCode(request.getIdentifier(), request.getSchoolCode());
         } else {
-            userOpt = userRepository.findByEmail(request.getUsername());
+            userOpt = userRepository.findByEmail(request.getIdentifier());
         }
 
         if (userOpt.isEmpty()) {
@@ -77,7 +77,7 @@ public class AuthService {
             Map<String, Object> challengeData = new HashMap<>();
             challengeData.put("challengeName", "NEW_PASSWORD_REQUIRED");
             challengeData.put("session", UUID.randomUUID().toString());
-            challengeData.put("username", request.getUsername());
+            challengeData.put("username", request.getIdentifier());
             return Map.of(
                     "message", "Password change required",
                     "data", challengeData

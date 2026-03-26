@@ -28,7 +28,7 @@ public class AdminService {
     @Autowired private MongoTemplate mongoTemplate;
 
     public Map<String, Object> getDashboardStats(User currentUser) {
-        if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -66,7 +66,7 @@ public class AdminService {
     }
 
     public Map<String, Object> bulkUploadUsers(List<Map<String, Object>> users, User currentUser) {
-        if (!UserRole.isAdminOrAbove(currentUser.getRole())) {
+        if (!("SUPER_ADMIN".equals(currentUser.getRole()) || "SCHOOL_ADMIN".equals(currentUser.getRole()))) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -105,7 +105,7 @@ public class AdminService {
     }
 
     public Map<String, Object> updateSystemTemplate(String templateId, Map<String, Object> body, User currentUser) {
-        if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 

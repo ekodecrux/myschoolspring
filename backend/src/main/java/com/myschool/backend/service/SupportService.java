@@ -46,7 +46,7 @@ public class SupportService {
 
     public Map<String, Object> listTickets(User currentUser) {
         List<SupportTicket> tickets;
-        if (UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if ("SUPER_ADMIN".equals(currentUser.getRole())) {
             tickets = ticketRepository.findAll();
         } else {
             tickets = ticketRepository.findByUserId(currentUser.getId());
@@ -63,7 +63,7 @@ public class SupportService {
                 .orElseThrow(() -> new AppException("Ticket not found", HttpStatus.NOT_FOUND));
 
         // Only ticket owner or super admin can reply
-        if (!ticket.getUserId().equals(currentUser.getId()) && !UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!ticket.getUserId().equals(currentUser.getId()) && !"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -79,7 +79,7 @@ public class SupportService {
         ticket.setUpdatedAt(Instant.now().toString());
 
         // Update status if admin replied
-        if (UserRole.SUPER_ADMIN.equals(currentUser.getRole()) && "open".equals(ticket.getStatus())) {
+        if ("SUPER_ADMIN".equals(currentUser.getRole()) && "open".equals(ticket.getStatus())) {
             ticket.setStatus("in_progress");
         }
 
@@ -88,7 +88,7 @@ public class SupportService {
     }
 
     public Map<String, Object> updateTicketStatus(String ticketId, String status, User currentUser) {
-        if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 

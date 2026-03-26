@@ -45,7 +45,7 @@ public class ImageService {
         Query query = new Query();
 
         // Status filter - non-admins see only approved
-        if (UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if ("SUPER_ADMIN".equals(currentUser.getRole())) {
             if (status != null && !status.isEmpty()) {
                 query.addCriteria(Criteria.where("status").is(status));
             }
@@ -136,7 +136,7 @@ public class ImageService {
         }
 
         // Determine status
-        String status = UserRole.SUPER_ADMIN.equals(currentUser.getRole()) ? "approved" : "pending";
+        String status = "SUPER_ADMIN".equals(currentUser.getRole()) ? "approved" : "pending";
 
         // Parse tags
         List<String> tagList = new ArrayList<>();
@@ -181,7 +181,7 @@ public class ImageService {
 
         // Approve or reject an image (Super Admin only)
     public Map<String, Object> approveRejectImage(String imageId, Map<String, Object> body, User currentUser) {
-        if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -213,7 +213,7 @@ public class ImageService {
 
         // Delete a resource image
     public Map<String, Object> deleteImage(String imageId, User currentUser) {
-        if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -360,8 +360,18 @@ public class ImageService {
         map.put("adminCode", img.getAdminCode());
         map.put("metaName", img.getMetaName());
         map.put("tags", img.getTags());
-        map.put("url", img.getUrl());
-        map.put("thumbnailUrl", img.getThumbnailUrl());
+        String imgUrl = img.getUrl() != null ? img.getUrl() : "";
+        if (!imgUrl.startsWith("http") && !imgUrl.isEmpty()) {
+            imgUrl = storageService.getPublicUrl(imgUrl);
+        }
+        map.put("url", imgUrl);
+        map.put("imageUrl", imgUrl);
+        String thumbUrl = img.getThumbnailUrl() != null ? img.getThumbnailUrl() : "";
+        if (!thumbUrl.startsWith("http") && !thumbUrl.isEmpty()) {
+            thumbUrl = storageService.getPublicUrl(thumbUrl);
+        }
+        map.put("thumbnailUrl", thumbUrl);
+
         map.put("title", img.getTitle());
         map.put("description", img.getDescription());
         map.put("status", img.getStatus());
@@ -380,5 +390,26 @@ public class ImageService {
         map.put("title", img.getTitle());
         map.put("uploadedAt", img.getUploadedAt());
         return map;
+    }
+
+    public byte[] downloadImageFromR2(String key) {
+        try {
+            String publicUrl = storageService.getPublicUrl(key);
+            java.net.URL url = new java.net.URL(publicUrl);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(30000);
+            try (java.io.InputStream is = conn.getInputStream()) {
+                return is.readAllBytes();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download image: " + e.getMessage());
+        }
+    }
+
+    public byte[] getPdfThumbnail(String key) {
+        // Return a placeholder - full PDF rendering requires additional libraries
+        // For now redirect to the R2 URL which the frontend can handle
+        throw new RuntimeException("PDF thumbnail not available - use direct R2 URL");
     }
 }

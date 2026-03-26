@@ -314,7 +314,7 @@ public class PaymentService {
     // ======================== ADMIN ========================
 
     public Map<String, Object> addCreditsAdmin(Map<String, Object> body, User currentUser) {
-        if (!UserRole.SUPER_ADMIN.equals(currentUser.getRole())) {
+        if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -357,5 +357,22 @@ public class PaymentService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Map<String, Object> getUserCredits(User currentUser) {
+        String role = currentUser.getRole() != null ? currentUser.getRole().toString() : "";
+        if ("SUPER_ADMIN".equals(role)) {
+            return Map.of(
+                "credits", -1,
+                "isUnlimited", true,
+                "display", "Unlimited"
+            );
+        }
+        int credits = currentUser.getCredits() != null ? currentUser.getCredits() : 0;
+        return Map.of(
+            "credits", credits,
+            "isUnlimited", false,
+            "display", String.valueOf(credits)
+        );
     }
 }

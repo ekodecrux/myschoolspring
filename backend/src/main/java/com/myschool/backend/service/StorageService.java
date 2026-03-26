@@ -118,7 +118,7 @@ public class StorageService {
                     .build();
 
             s3Client.putObject(request, RequestBody.fromBytes(content));
-            return getBaseUrl() + "/" + key;
+            String base = getBaseUrl(); String k = key.startsWith("/") ? key.substring(1) : key; return base.endsWith("/") ? base + k : base + "/" + k;
         } catch (Exception e) {
             logger.error("Failed to upload to R2: {}", e.getMessage());
             throw new RuntimeException("Failed to upload file: " + e.getMessage());
@@ -144,7 +144,7 @@ public class StorageService {
 
         // Get public URL for a key
     public String getPublicUrl(String key) {
-        return getBaseUrl() + "/" + key;
+        String base = getBaseUrl(); String k = key.startsWith("/") ? key.substring(1) : key; return base.endsWith("/") ? base + k : base + "/" + k;
     }
 
         // Clear cache

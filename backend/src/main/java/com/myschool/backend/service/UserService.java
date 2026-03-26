@@ -325,7 +325,7 @@ public class UserService {
     }
 
     public Map<String, Object> disableAccount(String userId, User currentUser) {
-        if (!UserRole.isAdminOrAbove(currentUser.getRole())) {
+        if (!("SUPER_ADMIN".equals(currentUser.getRole()) || "SCHOOL_ADMIN".equals(currentUser.getRole()))) {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN);
         }
 
@@ -387,4 +387,208 @@ public class UserService {
         item.put("studentsEnrolled", 0);
         return item;
     }
+
+    public Map<String, Object> adminUpdateUser(Map<String, Object> body, User currentUser) {
+        String role = currentUser.getRole() != null ? currentUser.getRole().toString() : "";
+        if (!role.equals("SUPER_ADMIN") && !role.equals("SCHOOL_ADMIN")) {
+            throw new AppException("Only Super Admin or School Admin can update users", org.springframework.http.HttpStatus.FORBIDDEN);
+        }
+        String userId = (String) body.get("userId");
+        if (userId == null || userId.isEmpty()) {
+            throw new AppException("userId is required", org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
+        User target = userRepository.findByIdField(userId)
+                .orElseThrow(() -> new AppException("User not found", org.springframework.http.HttpStatus.NOT_FOUND));
+        if (role.equals("SCHOOL_ADMIN") && !currentUser.getSchoolCode().equals(target.getSchoolCode())) {
+            throw new AppException("You can only update users in your school", org.springframework.http.HttpStatus.FORBIDDEN);
+        }
+        if (body.containsKey("name") && body.get("name") != null) target.setName((String) body.get("name"));
+        if (body.containsKey("email") && body.get("email") != null) target.setEmail((String) body.get("email"));
+        if (body.containsKey("mobileNumber") && body.get("mobileNumber") != null) target.setMobileNumber((String) body.get("mobileNumber"));
+        if (body.containsKey("mobile_number") && body.get("mobile_number") != null) target.setMobileNumber((String) body.get("mobile_number"));
+        if (body.containsKey("city") && body.get("city") != null) target.setCity((String) body.get("city"));
+        if (body.containsKey("state") && body.get("state") != null) target.setState((String) body.get("state"));
+        if (body.containsKey("disabled") && body.get("disabled") != null) target.setDisabled((Boolean) body.get("disabled"));
+        if (body.containsKey("credits") && body.get("credits") != null) {
+            target.setCredits(((Number) body.get("credits")).intValue());
+        }
+        userRepository.save(target);
+        return Map.of("message", "User updated successfully");
+    }
+
+    public Map<String, Object> checkCredits(User currentUser) {
+        String role = currentUser.getRole() != null ? currentUser.getRole().toString() : "";
+        if ("SUPER_ADMIN".equals(role)) {
+            java.util.Map<String, Object> r = new java.util.HashMap<>();
+            r.put("credits", -1); r.put("isUnlimited", true);
+            r.put("subscriptionStatus", "unlimited"); r.put("needsSubscription", false);
+            r.put("message", "Unlimited credits"); r.put("warningLevel", "none");
+            r.put("canPurchase", false); r.put("canAccessSubscription", true);
+            r.put("showCreditsInNavbar", true); r.put("currentPlan", "enterprise");
+            return r;
+        }
+        int credits = currentUser.getCredits() != null ? currentUser.getCredits() : 0;
+        String subscriptionStatus = currentUser.getSubscriptionStatus() != null ? currentUser.getSubscriptionStatus() : "free";
+        String warningLevel = null;
+        String warningMessage = null;
+        if (credits <= 0) { warningLevel = "critical"; warningMessage = "No credits remaining."; }
+        else if (credits <= 10) { warningLevel = "critical"; warningMessage = "Only " + credits + " credits remaining."; }
+        else if (credits <= 25) { warningLevel = "warning"; warningMessage = "You have " + credits + " credits remaining."; }
+        String currentPlan = null;
+        if ("enterprise".equals(subscriptionStatus) || credits >= 2000) currentPlan = "enterprise";
+        else if ("premium".equals(subscriptionStatus) || credits >= 500) currentPlan = "premium";
+        else if ("basic".equals(subscriptionStatus) || credits >= 100) currentPlan = "basic";
+        boolean canPurchase = "SCHOOL_ADMIN".equals(role);
+        boolean canAccessSubscription = "SCHOOL_ADMIN".equals(role) || "SUPER_ADMIN".equals(role);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("credits", credits);
+        result.put("isUnlimited", false);
+        result.put("subscriptionStatus", subscriptionStatus);
+        result.put("needsSubscription", credits <= 0);
+        result.put("message", warningMessage != null ? warningMessage : "You have " + credits + " credits available");
+        result.put("warningLevel", warningLevel);
+        result.put("canPurchase", canPurchase);
+        result.put("canAccessSubscription", canAccessSubscription);
+        result.put("showCreditsInNavbar", true);
+        result.put("currentPlan", currentPlan);
+        return result;
+    }
+
+    public Map<String, Object> useCredits(Map<String, Object> body, User currentUser) {
+        String role = currentUser.getRole() != null ? currentUser.getRole().toString() : "";
+        if ("SUPER_ADMIN".equals(role)) {
+            return Map.of("success", true, "message", "Credits used successfully", "creditsUsed", 0, "remainingCredits", -1, "needsSubscription", false);
+        }
+        int creditsToUse = body.containsKey("credits") ? ((Number) body.get("credits")).intValue() : 1;
+        int current = currentUser.getCredits() != null ? currentUser.getCredits() : 0;
+        if (current < creditsToUse) {
+            throw new AppException("Insufficient credits. You have " + current + " credits.", org.springframework.http.HttpStatus.PAYMENT_REQUIRED);
+        }
+        int newCredits = current - creditsToUse;
+        currentUser.setCredits(newCredits);
+        userRepository.save(currentUser);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("success", true);
+        result.put("message", "Credits used successfully");
+        result.put("creditsUsed", creditsToUse);
+        result.put("remainingCredits", newCredits);
+        result.put("needsSubscription", newCredits <= 0);
+        if (newCredits <= 10) result.put("warningMessage", "Only " + newCredits + " credits remaining.");
+        return result;
+    }
+
+    public Map<String, Object> purchaseCredits(Map<String, Object> body, User currentUser) {
+        String role = currentUser.getRole() != null ? currentUser.getRole().toString() : "";
+        if (!"SCHOOL_ADMIN".equals(role)) {
+            throw new AppException("Only School Admins can purchase credits", org.springframework.http.HttpStatus.FORBIDDEN);
+        }
+        int creditsRequested = body.containsKey("credits") ? ((Number) body.get("credits")).intValue() : 0;
+        if (creditsRequested <= 0) {
+            throw new AppException("Credits must be positive", org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
+        return Map.of(
+            "success", true,
+            "message", "Credit purchase request for " + creditsRequested + " credits has been submitted. Super Admin will review and approve."
+        );
+    }
+
+    public Map<String, Object> getSubscriptionHistory(User currentUser) {
+        java.util.List<org.bson.Document> orders = mongoTemplate.getDb()
+            .getCollection("orders")
+            .find(new org.bson.Document("user_id", currentUser.getId()))
+            .sort(new org.bson.Document("created_at", -1))
+            .limit(50)
+            .into(new java.util.ArrayList<>());
+        java.util.List<java.util.Map<String, Object>> history = new java.util.ArrayList<>();
+        for (org.bson.Document order : orders) {
+            java.util.Map<String, Object> item = new java.util.HashMap<>();
+            item.put("id", order.getString("id"));
+            item.put("planName", order.getString("plan_name"));
+            item.put("credits", order.getInteger("credits", 0));
+            Object amtObj = order.get("amount");
+            double amt = 0.0;
+            if (amtObj instanceof Number) amt = ((Number) amtObj).doubleValue();
+            item.put("amount", amt);
+            item.put("status", order.getString("status"));
+            item.put("createdAt", order.getString("created_at"));
+            history.add(item);
+        }
+        return Map.of("history", history, "total", history.size());
+    }
+
+    /**
+     * List users filtered by role, optionally by schoolCode and search query.
+     * Returns {"data": {"users": [...], "hasMore": false}} to match frontend Redux slice.
+     */
+    public Map<String, Object> listUsersByRole(String role, int limit, String schoolCode, String search, User currentUser) {
+        String callerRole = currentUser.getRole() != null ? currentUser.getRole().toString() : "";
+        org.springframework.data.mongodb.core.query.Query query =
+                new org.springframework.data.mongodb.core.query.Query();
+
+        if (role != null && !role.isEmpty()) {
+            query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("role").is(role));
+        }
+        if (schoolCode != null && !schoolCode.isEmpty()) {
+            query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("school_code").is(schoolCode));
+        } else if ("SCHOOL_ADMIN".equals(callerRole) && currentUser.getSchoolCode() != null) {
+            // School admins can only see their own school's users
+            query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("school_code").is(currentUser.getSchoolCode()));
+        }
+        if (search != null && !search.isEmpty()) {
+            org.springframework.data.mongodb.core.query.Criteria searchCriteria =
+                    new org.springframework.data.mongodb.core.query.Criteria().orOperator(
+                        org.springframework.data.mongodb.core.query.Criteria.where("name").regex(search, "i"),
+                        org.springframework.data.mongodb.core.query.Criteria.where("email").regex(search, "i"),
+                        org.springframework.data.mongodb.core.query.Criteria.where("school_code").regex(search, "i")
+                    );
+            query.addCriteria(searchCriteria);
+        }
+        query.limit(limit + 1); // fetch one extra to determine hasMore
+
+        java.util.List<User> users = mongoTemplate.find(query, User.class);
+        boolean hasMore = users.size() > limit;
+        if (hasMore) users = users.subList(0, limit);
+
+        java.util.List<Map<String, Object>> userList = users.stream().map(u -> {
+            Map<String, Object> m = new java.util.HashMap<>();
+            m.put("id", u.getId());
+            m.put("userId", u.getId());
+            m.put("name", u.getName() != null ? u.getName() : "");
+            m.put("email", u.getEmail() != null ? u.getEmail() : "");
+            m.put("emailId", u.getEmail() != null ? u.getEmail() : "");
+            m.put("role", u.getRole() != null ? u.getRole().toString() : "");
+            m.put("schoolCode", u.getSchoolCode() != null ? u.getSchoolCode() : "");
+            m.put("schoolName", u.getSchoolName() != null ? u.getSchoolName() : "");
+            m.put("mobileNumber", u.getMobileNumber() != null ? u.getMobileNumber() : "");
+            m.put("city", u.getCity());
+            m.put("state", u.getState());
+            m.put("address", u.getAddress());
+            m.put("credits", u.getCredits() != null ? u.getCredits() : 0);
+            m.put("subscriptionStatus", u.getSubscriptionStatus() != null ? u.getSubscriptionStatus() : "free");
+            m.put("disabled", (u.getDisabled() != null && u.getDisabled()));
+            m.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");
+            m.put("className", u.getClassName() != null ? u.getClassName() : "");
+            m.put("sectionName", u.getSectionName() != null ? u.getSectionName() : "");
+            m.put("rollNumber", u.getRollNumber() != null ? u.getRollNumber() : "");
+            m.put("teacherCode", u.getTeacherCode() != null ? u.getTeacherCode() : "");
+            m.put("studentCode", u.getStudentCode() != null ? u.getStudentCode() : "");
+            m.put("fatherName", u.getFatherName() != null ? u.getFatherName() : "");
+            m.put("principalName", u.getPrincipalName() != null ? u.getPrincipalName() : "");
+            m.put("studentsEnrolled", 0);
+            m.put("teachersEnrolled", 0);
+            m.put("studentCount", 0);
+            m.put("teacherName", "");
+            return m;
+        }).collect(java.util.stream.Collectors.toList());
+
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("users", userList);
+        data.put("hasMore", hasMore);
+        data.put("count", userList.size());
+
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("data", data);
+        return result;
+    }
+
 }

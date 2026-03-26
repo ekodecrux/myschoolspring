@@ -155,4 +155,65 @@ public class ImageController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    // Approve a pending image (admin route matching FastAPI /admin/approveImage)
+    @PostMapping("/admin/approveImage")
+    public ResponseEntity<Map<String, Object>> approveImageAdmin(
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal User currentUser) {
+        String imageId = (String) body.get("imageId");
+        if (imageId == null) {
+            return ResponseEntity.badRequest().body(Map.of("detail", "imageId is required"));
+        }
+        Map<String, Object> approveBody = new java.util.HashMap<>();
+        approveBody.put("action", "approve");
+        Map<String, Object> result = imageService.approveRejectImage(imageId, approveBody, currentUser);
+        return ResponseEntity.ok(result);
+    }
+
+    // Reject a pending image (admin route matching FastAPI /admin/rejectImage)
+    @PostMapping("/admin/rejectImage")
+    public ResponseEntity<Map<String, Object>> rejectImageAdmin(
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal User currentUser) {
+        String imageId = (String) body.get("imageId");
+        if (imageId == null) {
+            return ResponseEntity.badRequest().body(Map.of("detail", "imageId is required"));
+        }
+        Map<String, Object> rejectBody = new java.util.HashMap<>(body);
+        rejectBody.put("action", "reject");
+        Map<String, Object> result = imageService.approveRejectImage(imageId, rejectBody, currentUser);
+        return ResponseEntity.ok(result);
+    }
+
+    // Download image by key from R2
+    @GetMapping("/download")
+    public ResponseEntity<byte[]> downloadImage(
+            @RequestParam String key,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            byte[] data = imageService.downloadImageFromR2(key);
+            String filename = key.contains("/") ? key.substring(key.lastIndexOf("/") + 1) : key;
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .header("Content-Type", "application/octet-stream")
+                    .body(data);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Generate PDF thumbnail (returns image bytes)
+    @GetMapping("/pdf-thumbnail")
+    public ResponseEntity<byte[]> getPdfThumbnail(
+            @RequestParam String key) {
+        try {
+            byte[] thumbnail = imageService.getPdfThumbnail(key);
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/jpeg")
+                    .body(thumbnail);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
