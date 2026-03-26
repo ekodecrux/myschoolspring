@@ -85,10 +85,23 @@ public class PaymentService {
     );
 
     public Map<String, Object> getPlans() {
-        return Map.of(
-                "subscriptions", SUBSCRIPTION_PLANS,
-                "creditPacks", CREDIT_PACKS
-        );
+        // Build flat array of plans for frontend payment.jsx (expects response.data.plans)
+        java.util.List<Map<String, Object>> plansList = new java.util.ArrayList<>();
+        String[] planOrder = {"basic", "standard", "premium", "enterprise"};
+        for (String key : planOrder) {
+            Map<String, Object> p = SUBSCRIPTION_PLANS.get(key);
+            if (p != null) {
+                java.util.Map<String, Object> plan = new java.util.LinkedHashMap<>(p);
+                plan.put("id", key);
+                plan.put("type", "subscription");
+                plansList.add(plan);
+            }
+        }
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("plans", plansList);
+        result.put("subscriptions", SUBSCRIPTION_PLANS);
+        result.put("creditPacks", CREDIT_PACKS);
+        return result;
     }
 
     // ======================== RAZORPAY ========================
@@ -98,8 +111,8 @@ public class PaymentService {
             throw new AppException("Razorpay is not configured", HttpStatus.SERVICE_UNAVAILABLE);
         }
 
-        String planType = (String) body.get("planType");
-        String planId = (String) body.get("planId");
+        String planType = body.get("plan_type") != null ? (String) body.get("plan_type") : (String) body.get("planType");
+        String planId = body.get("plan_id") != null ? (String) body.get("plan_id") : (String) body.get("planId");
 
         Map<String, Object> plan = getPlan(planType, planId);
         if (plan == null) {
@@ -198,8 +211,8 @@ public class PaymentService {
             throw new AppException("Stripe is not configured", HttpStatus.SERVICE_UNAVAILABLE);
         }
 
-        String planType = (String) body.get("planType");
-        String planId = (String) body.get("planId");
+        String planType = body.get("plan_type") != null ? (String) body.get("plan_type") : (String) body.get("planType");
+        String planId = body.get("plan_id") != null ? (String) body.get("plan_id") : (String) body.get("planId");
         String successUrl = (String) body.getOrDefault("successUrl", "https://portal.myschoolct.com/payment/success");
         String cancelUrl = (String) body.getOrDefault("cancelUrl", "https://portal.myschoolct.com/payment/cancel");
 
@@ -335,6 +348,15 @@ public class PaymentService {
     }
 
     private Map<String, Object> getPlan(String planType, String planId) {
+        if (planType == null) return null;
+        // Direct plan name lookup (e.g. plan_type="basic" -> subscription plan)
+        if (SUBSCRIPTION_PLANS.containsKey(planType)) {
+            return SUBSCRIPTION_PLANS.get(planType);
+        }
+        if (CREDIT_PACKS.containsKey(planType)) {
+            return CREDIT_PACKS.get(planType);
+        }
+        // Legacy: planType="subscription" + planId="basic"
         if ("subscription".equals(planType) && planId != null) {
             return SUBSCRIPTION_PLANS.get(planId);
         } else if ("credits".equals(planType) && planId != null) {

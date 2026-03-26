@@ -412,4 +412,69 @@ public class ImageService {
         // For now redirect to the R2 URL which the frontend can handle
         throw new RuntimeException("PDF thumbnail not available - use direct R2 URL");
     }
+
+    public Map<String, Object> fetchImages(String folderPath, int limit, int skip, String search, String subject, String grade, User currentUser) {
+        try {
+            com.mongodb.client.MongoCollection<org.bson.Document> col = mongoTemplate.getDb().getCollection("resource_images");
+            org.bson.Document query = new org.bson.Document("status",
+                new org.bson.Document("$in", java.util.Arrays.asList("active", "approved")));
+            if (folderPath != null && !folderPath.isEmpty()) {
+                query.append("s3_path", new org.bson.Document("$regex", "^" + folderPath).append("$options", "i"));
+            }
+            if (search != null && !search.isEmpty()) {
+                org.bson.Document searchDoc = new org.bson.Document("$regex", search).append("$options", "i");
+                query.append("$or", java.util.Arrays.asList(
+                    new org.bson.Document("title", searchDoc),
+                    new org.bson.Document("unit_lesson", searchDoc),
+                    new org.bson.Document("image_name", searchDoc)
+                ));
+            }
+            if (subject != null && !subject.isEmpty()) {
+                query.append("subject", subject);
+            }
+            if (grade != null && !grade.isEmpty()) {
+                query.append("sub_menu", new org.bson.Document("$regex", grade).append("$options", "i"));
+            }
+
+            // ImageRenderer expects list as LinkedHashMap<s3_path, publicUrl>
+            // matching the original FastAPI format exactly
+            java.util.Map<String, String> listDict = new java.util.LinkedHashMap<>();
+            col.find(query).skip(skip).limit(limit).sort(new org.bson.Document("uploaded_at", -1))
+                .forEach(doc -> {
+                    String s3path = doc.getString("s3_path");
+                    String url = doc.getString("url");
+                    if (s3path != null && url != null) {
+                        listDict.put(s3path, url);
+                    }
+                });
+
+            long total = col.countDocuments(query);
+            java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+            result.put("list", listDict);
+            result.put("continuationToken", skip + limit < total ? String.valueOf(skip + limit) : null);
+            result.put("isTruncated", skip + limit < total);
+            result.put("totalCount", total);
+
+            java.util.Set<String> filterSet = new java.util.LinkedHashSet<>();
+            String filterPrefix = (folderPath != null && !folderPath.isEmpty()) ? folderPath + "/" : "";
+            col.distinct("s3_path", query, String.class).forEach(p -> {
+                if (p != null && p.startsWith(filterPrefix)) {
+                    String rest = p.substring(filterPrefix.length());
+                    int slash = rest.indexOf("/");
+                    if (slash > 0) filterSet.add(rest.substring(0, slash));
+                }
+            });
+            result.put("filters", new java.util.ArrayList<>(filterSet));
+            result.put("filterField", "folder");
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            java.util.Map<String, Object> err = new java.util.LinkedHashMap<>();
+            err.put("list", new java.util.LinkedHashMap<>());
+            err.put("totalCount", 0L);
+            err.put("isTruncated", false);
+            return err;
+        }
+    }
+
 }

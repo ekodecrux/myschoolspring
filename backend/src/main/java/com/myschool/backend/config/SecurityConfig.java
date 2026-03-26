@@ -66,6 +66,10 @@ public class SecurityConfig {
                     "/api/rest/auth/newPasswordChallenge",
                     "/api/rest/schools/public/active",
                     "/api/rest/images/proxy",
+                    "/api/rest/images/fetch",
+                    "/api/rest/images/list",
+                    "/api/rest/images/filters",
+                    "/api/rest/academic/**",
                     "/uploads/**"
                 ).permitAll()
                 .anyRequest().authenticated()

@@ -31,6 +31,7 @@ const Sections = () => {
     const [currentFilterPath, setCurrentFilterPath] = useState('');
     const [filterBreadcrumb, setFilterBreadcrumb] = useState([]);
     const [lastFilters, setLastFilters] = useState([]); // Keep track of last non-empty filters for sibling switching
+    const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
     
     // Map URL paths to One Click Resource Center paths
     const getOnClickPath = () => {
@@ -160,6 +161,12 @@ const Sections = () => {
     }
     
     const handleFilterClick = (filter) => {
+        // Auto-collapse the panel when a filter is selected (not ALL)
+        if (filter !== 'ALL') {
+            setIsPanelCollapsed(true);
+        } else {
+            setIsPanelCollapsed(false);
+        }
         const basePath = getBasePath();
         
         if (filter === 'ALL') {
@@ -352,29 +359,48 @@ const Sections = () => {
                     Non-Image Bank sections: Show filter bar if filters available from API or from last level */}
                 {!isImageBankPage() && ((apiFilters && apiFilters.length > 0) || (lastFilters && lastFilters.length > 0 && filterBreadcrumb.length > 0)) && (
                     <div className="academicFilterContainer">
-                        <div className="academicBluePane">
-                            <div className="bookTypesRow">
-                                {/* ALL option */}
-                                <div
-                                    className={`bookTypeChip ${selectedFilter === 'ALL' ? 'active' : ''}`}
-                                    onClick={() => handleFilterClick('ALL')}
-                                    style={{ cursor: 'pointer' }}
-                                >
-                                    ALL
-                                </div>
-                                {/* Use apiFilters if available, otherwise use lastFilters for sibling switching */}
-                                {((apiFilters && apiFilters.length > 0) ? apiFilters : lastFilters).map((filter) => (
+                        {/* Panel header: shows selected filter + toggle button */}
+                        <div className="filterPanelHeader">
+                            <span className="filterPanelSelected">
+                                {selectedFilter !== 'ALL' ? (
+                                    <span>Filtered: <strong>{selectedFilter}</strong></span>
+                                ) : (
+                                    <span>Select a filter</span>
+                                )}
+                            </span>
+                            <button
+                                className="collapseToggle"
+                                onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+                            >
+                                {isPanelCollapsed ? '▼ Expand' : '▲ Collapse'}
+                            </button>
+                        </div>
+                        {/* Blue panel - hidden when collapsed */}
+                        {!isPanelCollapsed && (
+                            <div className="academicBluePane">
+                                <div className="bookTypesRow">
+                                    {/* ALL option */}
                                     <div
-                                        key={filter}
-                                        className={`bookTypeChip ${selectedFilter === filter ? 'active' : ''}`}
-                                        onClick={() => handleFilterClick(filter)}
+                                        className={`bookTypeChip ${selectedFilter === 'ALL' ? 'active' : ''}`}
+                                        onClick={() => handleFilterClick('ALL')}
                                         style={{ cursor: 'pointer' }}
                                     >
-                                        {filter}
+                                        ALL
                                     </div>
-                                ))}
+                                    {/* Use apiFilters if available, otherwise use lastFilters for sibling switching */}
+                                    {((apiFilters && apiFilters.length > 0) ? apiFilters : lastFilters).map((filter) => (
+                                        <div
+                                            key={filter}
+                                            className={`bookTypeChip ${selectedFilter === filter ? 'active' : ''}`}
+                                            onClick={() => handleFilterClick(filter)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            {filter}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
                 
