@@ -317,7 +317,7 @@ const Sections = () => {
             </div>
             <div>
                 {/* Breadcrumb navigation for filter path */}
-                {!isImageBankPage() && filterBreadcrumb.length > 0 && (
+                {filterBreadcrumb.length > 0 && (
                     <div style={{ 
                         padding: '10px 20px', 
                         backgroundColor: '#f5f5f5', 
@@ -354,9 +354,8 @@ const Sections = () => {
                     </div>
                 )}
                 
-                {/* Image Bank: Uses MegaMenu dropdown (rendered by Header.jsx) - no separate filter bar needed
-                    Non-Image Bank sections: Show filter bar if filters available from API or from last level */}
-                {!isImageBankPage() && ((apiFilters && apiFilters.length > 0) || (lastFilters && lastFilters.length > 0 && filterBreadcrumb.length > 0)) && (
+                {/* Show blue filter panel if filters are available from API or from last level */}
+                {((apiFilters && apiFilters.length > 0) || (lastFilters && lastFilters.length > 0 && filterBreadcrumb.length > 0)) && (
                     <div className="academicFilterContainer">
                         {/* Panel header: shows selected filter + toggle button */}
                         <div className="filterPanelHeader">
