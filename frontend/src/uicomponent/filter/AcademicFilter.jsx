@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
 import { LeftArrow, RightArrow } from './Arrow';
 import useDrag from '../../customTheme/signUpMenu/useDrag';
@@ -8,27 +8,23 @@ import './AcademicFilter.css';
 
 const AcademicFilter = ({ loadImages }) => {
     const location = useLocation();
-    const [subjects, setSubjects] = useState([]);
     const [bookTypes, setBookTypes] = useState([]);
     const [unitLessons, setUnitLessons] = useState([]);
-    const [selectedSubject, setSelectedSubject] = useState(null);
     const [selectedBookType, setSelectedBookType] = useState(null);
     const [selectedLesson, setSelectedLesson] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
-    
+
     const { dragStart, dragStop, dragMove, dragging } = useDrag();
     const handleDrag = ({ scrollContainer }) => (e) => dragMove(e, (posDiff) => {
         if (scrollContainer.current) {
             scrollContainer.current.scrollLeft += posDiff;
         }
     });
-    
-    // Get current class from URL
+
+    // Get current class from URL e.g. /academic/class/class-1 -> CLASS-1
     const getCurrentClass = useCallback(() => {
-        const pathname = location.pathname.toLowerCase();
-        const parts = pathname.split('/').filter(p => p);
-        
+        const parts = location.pathname.toLowerCase().split('/').filter(p => p);
         if (parts.includes('academic') && parts.includes('class')) {
             const classIndex = parts.indexOf('class');
             if (classIndex !== -1 && parts[classIndex + 1]) {
@@ -37,84 +33,45 @@ const AcademicFilter = ({ loadImages }) => {
         }
         return null;
     }, [location.pathname]);
-    
-    // Get current subject from URL (if navigated directly to subject)
+
+    // Get current subject from URL e.g. /academic/class/class-1/english -> ENGLISH
     const getCurrentSubjectFromUrl = useCallback(() => {
-        const pathname = location.pathname.toLowerCase();
-        const parts = pathname.split('/').filter(p => p);
-        
-        // URL pattern: /academic/class/CLASS-1/ENGLISH
+        const parts = location.pathname.toLowerCase().split('/').filter(p => p);
         if (parts.includes('academic') && parts.includes('class')) {
             const classIndex = parts.indexOf('class');
-            // Subject would be at classIndex + 2 (after class name)
             if (classIndex !== -1 && parts[classIndex + 2]) {
                 return decodeURIComponent(parts[classIndex + 2]).toUpperCase().replace(/-/g, ' ');
             }
         }
         return null;
     }, [location.pathname]);
-    
-    // Fetch subjects when class changes
-    useEffect(() => {
-        const fetchSubjects = async () => {
-            const currentClass = getCurrentClass();
-            if (!currentClass) {
-                setSubjects([]);
-                return;
+
+    // Get current book type from URL e.g. /academic/class/class-1/english/course_book -> COURSE_BOOK
+    const getCurrentBookTypeFromUrl = useCallback(() => {
+        const parts = location.pathname.toLowerCase().split('/').filter(p => p);
+        if (parts.includes('academic') && parts.includes('class')) {
+            const classIndex = parts.indexOf('class');
+            if (classIndex !== -1 && parts[classIndex + 3]) {
+                return decodeURIComponent(parts[classIndex + 3]).toUpperCase().replace(/-/g, '_');
             }
-            
-            setLoading(true);
-            try {
-                const backendUrl = process.env.REACT_APP_BACKEND_URL;
-                const response = await fetch(`${backendUrl}/api/rest/academic/subjects`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ class_level: currentClass })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    setSubjects(data.subjects || []);
-                    
-                    // Check if subject is in URL and initialize it
-                    const urlSubject = getCurrentSubjectFromUrl();
-                    if (urlSubject && data.subjects && data.subjects.includes(urlSubject)) {
-                        setSelectedSubject(urlSubject);
-                        loadImages(`academic/class/${currentClass.toLowerCase()}/${urlSubject.toLowerCase()}`);
-                    } else {
-                        // Load all images for this class initially
-                        loadImages(`academic/class/${currentClass.toLowerCase()}`);
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching subjects:', error);
-            }
-            setLoading(false);
-        };
-        
-        fetchSubjects();
-        // Reset selections when class changes (but preserve subject if it's in URL)
-        const urlSubject = getCurrentSubjectFromUrl();
-        if (!urlSubject) {
-            setSelectedSubject(null);
         }
-        setSelectedBookType(null);
-        setSelectedLesson(null);
-        setBookTypes([]);
-        setUnitLessons([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        return null;
     }, [location.pathname]);
-    
-    // Fetch book types when subject is selected
+
+    // Fetch book types when subject changes (from URL)
     useEffect(() => {
+        const currentClass = getCurrentClass();
+        const currentSubject = getCurrentSubjectFromUrl();
+
+        if (!currentClass || !currentSubject) {
+            setBookTypes([]);
+            setUnitLessons([]);
+            setSelectedBookType(null);
+            setSelectedLesson(null);
+            return;
+        }
+
         const fetchBookTypes = async () => {
-            const currentClass = getCurrentClass();
-            if (!currentClass || !selectedSubject) {
-                setBookTypes([]);
-                setUnitLessons([]);
-                return;
-            }
-            
             setLoading(true);
             try {
                 const backendUrl = process.env.REACT_APP_BACKEND_URL;
@@ -123,16 +80,23 @@ const AcademicFilter = ({ loadImages }) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         class_level: currentClass,
-                        subject: selectedSubject
+                        subject: currentSubject
                     })
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
-                    setBookTypes(data.book_types || []);
-                    // Auto-select first book type
-                    if (data.book_types && data.book_types.length > 0) {
-                        setSelectedBookType(data.book_types[0]);
+                    const types = data.book_types || [];
+                    setBookTypes(types);
+
+                    // Check if book type is already in URL
+                    const urlBookType = getCurrentBookTypeFromUrl();
+                    if (urlBookType && types.includes(urlBookType)) {
+                        setSelectedBookType(urlBookType);
+                    } else if (types.length > 0) {
+                        // Auto-select first book type and load its images
+                        setSelectedBookType(types[0]);
+                        loadImages(`academic/class/${currentClass.toLowerCase()}/${currentSubject.toLowerCase()}/${types[0]}`);
                     }
                 }
             } catch (error) {
@@ -140,22 +104,24 @@ const AcademicFilter = ({ loadImages }) => {
             }
             setLoading(false);
         };
-        
-        if (selectedSubject) {
-            fetchBookTypes();
-        }
+
+        fetchBookTypes();
+        setSelectedLesson(null);
+        setUnitLessons([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedSubject, location.pathname]);
-    
+    }, [location.pathname]);
+
     // Fetch unit lessons when book type is selected
     useEffect(() => {
+        const currentClass = getCurrentClass();
+        const currentSubject = getCurrentSubjectFromUrl();
+
+        if (!currentClass || !currentSubject || !selectedBookType) {
+            setUnitLessons([]);
+            return;
+        }
+
         const fetchUnitLessons = async () => {
-            const currentClass = getCurrentClass();
-            if (!currentClass || !selectedSubject || !selectedBookType) {
-                setUnitLessons([]);
-                return;
-            }
-            
             setLoading(true);
             try {
                 const backendUrl = process.env.REACT_APP_BACKEND_URL;
@@ -164,11 +130,11 @@ const AcademicFilter = ({ loadImages }) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         class_level: currentClass,
-                        subject: selectedSubject,
+                        subject: currentSubject,
                         book_type: selectedBookType
                     })
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     const sortedLessons = (data.unit_lessons || []).sort((a, b) => {
@@ -183,124 +149,81 @@ const AcademicFilter = ({ loadImages }) => {
             }
             setLoading(false);
         };
-        
-        if (selectedBookType) {
-            fetchUnitLessons();
-            // Load images for the book type
-            const currentClass = getCurrentClass();
-            if (currentClass && selectedSubject) {
-                loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}/${selectedBookType}`);
-            }
-        }
+
+        fetchUnitLessons();
+        // Load images for the selected book type
+        loadImages(`academic/class/${currentClass.toLowerCase()}/${currentSubject.toLowerCase()}/${selectedBookType}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedBookType, selectedSubject, location.pathname]);
-    
-    const handleSubjectClick = (subject) => {
-        if (dragging) return;
-        
-        // Deselect if clicking same subject
-        if (selectedSubject === subject) {
-            setSelectedSubject(null);
-            setSelectedBookType(null);
-            setSelectedLesson(null);
-            setBookTypes([]);
-            setUnitLessons([]);
-            // Load all images for this class
-            const currentClass = getCurrentClass();
-            if (currentClass) {
-                loadImages(`academic/class/${currentClass.toLowerCase()}`);
-            }
-            return;
-        }
-        
-        setSelectedSubject(subject);
-        setSelectedBookType(null);
-        setSelectedLesson(null);
-        setUnitLessons([]);
-        
-        // Load images for this subject
-        const currentClass = getCurrentClass();
-        if (currentClass) {
-            loadImages(`academic/class/${currentClass.toLowerCase()}/${subject}`);
-        }
-    };
-    
+    }, [selectedBookType]);
+
     const handleBookTypeClick = (bookType) => {
         if (dragging) return;
         setSelectedBookType(bookType);
         setSelectedLesson(null);
     };
-    
+
     const handleLessonClick = (lesson) => {
         if (dragging) return;
         setSelectedLesson(lesson);
-        
+
         const currentClass = getCurrentClass();
-        if (currentClass && selectedSubject && selectedBookType) {
-            loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}/${selectedBookType}/${lesson}`);
+        const currentSubject = getCurrentSubjectFromUrl();
+        if (currentClass && currentSubject && selectedBookType) {
+            loadImages(`academic/class/${currentClass.toLowerCase()}/${currentSubject.toLowerCase()}/${selectedBookType}/${lesson}`);
         }
     };
-    
+
     const formatBookTypeName = (bookType) => {
         return bookType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
     };
-    
+
     const currentClass = getCurrentClass();
-    if (!currentClass) {
+    const currentSubject = getCurrentSubjectFromUrl();
+
+    // Only render when we are on a subject page (class + subject in URL)
+    if (!currentClass || !currentSubject) {
         return null;
     }
-    
+
     // Build breadcrumb path
     const getBreadcrumb = () => {
         const parts = [`Class ${currentClass.replace('CLASS-', '')}`];
-        if (selectedSubject) parts.push(selectedSubject);
+        if (currentSubject) parts.push(currentSubject);
         if (selectedBookType) parts.push(formatBookTypeName(selectedBookType));
         if (selectedLesson) parts.push(selectedLesson);
         return parts;
     };
-    
+
     const breadcrumb = getBreadcrumb();
-    const hasSelection = selectedSubject || selectedBookType || selectedLesson;
-    
+
     return (
         <div className="academicFilterContainer">
-            {/* Persistent header - always visible when on a class page */}
+            {/* Header bar - always visible when on a subject page */}
             <div className="filterPanelHeader">
                 <span className="filterPanelSelected">
-                    {hasSelection ? (
-                        <span>
-                            {breadcrumb.map((item, idx) => (
-                                <span key={idx}>
-                                    <span
-                                        className={idx === breadcrumb.length - 1 ? 'breadcrumbActive' : 'breadcrumbItem'}
-                                        onClick={() => {
-                                            if (idx === 0) {
-                                                setSelectedSubject(null);
-                                                setSelectedBookType(null);
-                                                setSelectedLesson(null);
-                                                setBookTypes([]);
-                                                setUnitLessons([]);
-                                                loadImages(`academic/class/${currentClass.toLowerCase()}`);
-                                            } else if (idx === 1) {
-                                                setSelectedBookType(null);
-                                                setSelectedLesson(null);
-                                                setUnitLessons([]);
-                                                loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}`);
-                                            } else if (idx === 2) {
-                                                setSelectedLesson(null);
-                                                loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}/${selectedBookType}`);
-                                            }
-                                        }}
-                                    >
-                                        {item}
-                                    </span>
-                                    {idx < breadcrumb.length - 1 && <span className="breadcrumbSeparator"> › </span>}
-                                </span>
-                            ))}
+                    {breadcrumb.map((item, idx) => (
+                        <span key={idx}>
+                            <span
+                                className={idx === breadcrumb.length - 1 ? 'breadcrumbActive' : 'breadcrumbItem'}
+                                onClick={() => {
+                                    if (idx === 1) {
+                                        // Click subject - go back to subject level
+                                        setSelectedBookType(null);
+                                        setSelectedLesson(null);
+                                        setUnitLessons([]);
+                                        loadImages(`academic/class/${currentClass.toLowerCase()}/${currentSubject.toLowerCase()}`);
+                                    } else if (idx === 2) {
+                                        // Click book type - go back to book type level
+                                        setSelectedLesson(null);
+                                        loadImages(`academic/class/${currentClass.toLowerCase()}/${currentSubject.toLowerCase()}/${selectedBookType}`);
+                                    }
+                                }}
+                            >
+                                {item}
+                            </span>
+                            {idx < breadcrumb.length - 1 && <span className="breadcrumbSeparator"> › </span>}
                         </span>
-                    ) : (
-                        <span>Filters</span>
-                    )}
+                    ))}
                 </span>
                 <button
                     className="collapseToggle"
@@ -310,49 +233,11 @@ const AcademicFilter = ({ loadImages }) => {
                 </button>
             </div>
 
-            {/* Blue Pane - subjects tab bar + book types + lessons */}
+            {/* Blue panel - book types and lessons */}
             {!isCollapsed && (
                 <div className="academicBluePane">
-                    {/* Subjects horizontal scroll tab bar */}
-                    {subjects.length > 0 && (
-                        <div className="subjectsRow">
-                            <ScrollMenu
-                                scrollContainerClassName='subjectScrollContainer'
-                                onMouseDown={() => dragStart}
-                                LeftArrow={LeftArrow}
-                                RightArrow={RightArrow}
-                                onMouseUp={() => dragStop}
-                                onMouseMove={handleDrag}
-                            >
-                                <SubjectCard
-                                    key="ALL"
-                                    itemId="ALL"
-                                    title="All"
-                                    selected={!selectedSubject}
-                                    onClick={() => {
-                                        setSelectedSubject(null);
-                                        setSelectedBookType(null);
-                                        setSelectedLesson(null);
-                                        setBookTypes([]);
-                                        setUnitLessons([]);
-                                        loadImages(`academic/class/${currentClass.toLowerCase()}`);
-                                    }}
-                                />
-                                {subjects.map((subject) => (
-                                    <SubjectCard
-                                        key={subject}
-                                        itemId={subject}
-                                        title={subject}
-                                        selected={selectedSubject === subject}
-                                        onClick={() => handleSubjectClick(subject)}
-                                    />
-                                ))}
-                            </ScrollMenu>
-                        </div>
-                    )}
-
-                    {/* Book Type Tabs - Show when subject is selected */}
-                    {selectedSubject && bookTypes.length > 0 && (
+                    {/* Book Type chips */}
+                    {bookTypes.length > 0 && (
                         <div className="bookTypesRow">
                             {bookTypes.map((bookType) => (
                                 <div
@@ -366,7 +251,7 @@ const AcademicFilter = ({ loadImages }) => {
                         </div>
                     )}
 
-                    {/* Unit/Lesson Row - Show when book type is selected */}
+                    {/* Unit/Lesson chips - show when book type is selected */}
                     {selectedBookType && unitLessons.length > 0 && (
                         <div className="lessonsRow">
                             <ScrollMenu
@@ -397,26 +282,12 @@ const AcademicFilter = ({ loadImages }) => {
     );
 };
 
-function SubjectCard({ onClick, selected, title }) {
-    const visibility = React.useContext(VisibilityContext);
-    
-    return (
-        <div 
-            onClick={() => onClick(visibility)} 
-            className={`subjectChip ${selected ? 'selected' : ''}`}
-            tabIndex={0}
-        >
-            {title}
-        </div>
-    );
-}
-
 function LessonCard({ onClick, selected, title }) {
     const visibility = React.useContext(VisibilityContext);
-    
+
     return (
-        <div 
-            onClick={() => onClick(visibility)} 
+        <div
+            onClick={() => onClick(visibility)}
             className={`lessonChip ${selected ? 'selected' : ''}`}
             tabIndex={0}
         >
