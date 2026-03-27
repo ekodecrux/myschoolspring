@@ -264,55 +264,93 @@ const AcademicFilter = ({ loadImages }) => {
     
     return (
         <div className="academicFilterContainer">
-            {/* Breadcrumb - Shows selected path */}
-            {hasSelection && (
-                <div className="filterBreadcrumb">
-                    <span className="breadcrumbPath">
-                        {breadcrumb.map((item, idx) => (
-                            <span key={idx}>
-                                <span 
-                                    className={idx === breadcrumb.length - 1 ? 'breadcrumbActive' : 'breadcrumbItem'}
-                                    onClick={() => {
-                                        // Click on breadcrumb item to go back to that level
-                                        if (idx === 0) {
-                                            // Class level - reset all
-                                            setSelectedSubject(null);
-                                            setSelectedBookType(null);
-                                            setSelectedLesson(null);
-                                            setBookTypes([]);
-                                            setUnitLessons([]);
-                                            loadImages(`academic/class/${currentClass.toLowerCase()}`);
-                                        } else if (idx === 1) {
-                                            // Subject level
-                                            setSelectedBookType(null);
-                                            setSelectedLesson(null);
-                                            setUnitLessons([]);
-                                            loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}`);
-                                        } else if (idx === 2) {
-                                            // Book type level
-                                            setSelectedLesson(null);
-                                            loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}/${selectedBookType}`);
-                                        }
-                                    }}
-                                >
-                                    {item}
+            {/* Persistent header - always visible when on a class page */}
+            <div className="filterPanelHeader">
+                <span className="filterPanelSelected">
+                    {hasSelection ? (
+                        <span>
+                            {breadcrumb.map((item, idx) => (
+                                <span key={idx}>
+                                    <span
+                                        className={idx === breadcrumb.length - 1 ? 'breadcrumbActive' : 'breadcrumbItem'}
+                                        onClick={() => {
+                                            if (idx === 0) {
+                                                setSelectedSubject(null);
+                                                setSelectedBookType(null);
+                                                setSelectedLesson(null);
+                                                setBookTypes([]);
+                                                setUnitLessons([]);
+                                                loadImages(`academic/class/${currentClass.toLowerCase()}`);
+                                            } else if (idx === 1) {
+                                                setSelectedBookType(null);
+                                                setSelectedLesson(null);
+                                                setUnitLessons([]);
+                                                loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}`);
+                                            } else if (idx === 2) {
+                                                setSelectedLesson(null);
+                                                loadImages(`academic/class/${currentClass.toLowerCase()}/${selectedSubject}/${selectedBookType}`);
+                                            }
+                                        }}
+                                    >
+                                        {item}
+                                    </span>
+                                    {idx < breadcrumb.length - 1 && <span className="breadcrumbSeparator"> › </span>}
                                 </span>
-                                {idx < breadcrumb.length - 1 && <span className="breadcrumbSeparator"> › </span>}
-                            </span>
-                        ))}
-                    </span>
-                    <button 
-                        className="collapseToggle"
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                    >
-                        {isCollapsed ? '▼ Expand' : '▲ Collapse'}
-                    </button>
-                </div>
-            )}
-            
-            {/* Blue Pane - Contains book types and lessons only - only show when there's content to display */}
-            {!isCollapsed && selectedSubject && (bookTypes.length > 0 || unitLessons.length > 0) && (
+                            ))}
+                        </span>
+                    ) : (
+                        <span>Filters</span>
+                    )}
+                </span>
+                <button
+                    className="collapseToggle"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                >
+                    {isCollapsed ? '▼ Expand' : '▲ Collapse'}
+                </button>
+            </div>
+
+            {/* Blue Pane - subjects tab bar + book types + lessons */}
+            {!isCollapsed && (
                 <div className="academicBluePane">
+                    {/* Subjects horizontal scroll tab bar */}
+                    {subjects.length > 0 && (
+                        <div className="subjectsRow">
+                            <ScrollMenu
+                                scrollContainerClassName='subjectScrollContainer'
+                                onMouseDown={() => dragStart}
+                                LeftArrow={LeftArrow}
+                                RightArrow={RightArrow}
+                                onMouseUp={() => dragStop}
+                                onMouseMove={handleDrag}
+                            >
+                                <SubjectCard
+                                    key="ALL"
+                                    itemId="ALL"
+                                    title="All"
+                                    selected={!selectedSubject}
+                                    onClick={() => {
+                                        setSelectedSubject(null);
+                                        setSelectedBookType(null);
+                                        setSelectedLesson(null);
+                                        setBookTypes([]);
+                                        setUnitLessons([]);
+                                        loadImages(`academic/class/${currentClass.toLowerCase()}`);
+                                    }}
+                                />
+                                {subjects.map((subject) => (
+                                    <SubjectCard
+                                        key={subject}
+                                        itemId={subject}
+                                        title={subject}
+                                        selected={selectedSubject === subject}
+                                        onClick={() => handleSubjectClick(subject)}
+                                    />
+                                ))}
+                            </ScrollMenu>
+                        </div>
+                    )}
+
                     {/* Book Type Tabs - Show when subject is selected */}
                     {selectedSubject && bookTypes.length > 0 && (
                         <div className="bookTypesRow">
@@ -327,7 +365,7 @@ const AcademicFilter = ({ loadImages }) => {
                             ))}
                         </div>
                     )}
-                    
+
                     {/* Unit/Lesson Row - Show when book type is selected */}
                     {selectedBookType && unitLessons.length > 0 && (
                         <div className="lessonsRow">
@@ -353,7 +391,7 @@ const AcademicFilter = ({ loadImages }) => {
                     )}
                 </div>
             )}
-            
+
             {loading && <div className="filterLoadingIndicator">Loading...</div>}
         </div>
     );

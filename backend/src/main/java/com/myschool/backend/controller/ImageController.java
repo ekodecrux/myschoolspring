@@ -237,6 +237,33 @@ public class ImageController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(imageService.fetchImages(folderPath, imagesPerPage, continuationToken, currentUser));
     }
+}
 
+@RestController
+@RequestMapping("/api/rest/academic")
+class AcademicController {
 
+    @Autowired
+    private ImageService imageService;
+
+    @PostMapping("/subjects")
+    public ResponseEntity<Map<String, Object>> getSubjects(@RequestBody Map<String, Object> body) {
+        String classLevel = body.get("class_level") != null ? ((String) body.get("class_level")).toUpperCase() : "";
+        return ResponseEntity.ok(imageService.getAcademicSubjects(classLevel));
+    }
+
+    @PostMapping("/book-types")
+    public ResponseEntity<Map<String, Object>> getBookTypes(@RequestBody Map<String, Object> body) {
+        String classLevel = body.get("class_level") != null ? ((String) body.get("class_level")).toUpperCase() : "";
+        String subject = body.get("subject") != null ? ((String) body.get("subject")).toUpperCase() : "";
+        return ResponseEntity.ok(imageService.getAcademicBookTypes(classLevel, subject));
+    }
+
+    @PostMapping("/unit-lessons")
+    public ResponseEntity<Map<String, Object>> getUnitLessons(@RequestBody Map<String, Object> body) {
+        String classLevel = body.get("class_level") != null ? ((String) body.get("class_level")).toUpperCase() : "";
+        String subject = body.get("subject") != null ? ((String) body.get("subject")).toUpperCase() : "";
+        String bookType = body.get("book_type") != null ? ((String) body.get("book_type")).toUpperCase() : "";
+        return ResponseEntity.ok(imageService.getAcademicUnitLessons(classLevel, subject, bookType));
+    }
 }

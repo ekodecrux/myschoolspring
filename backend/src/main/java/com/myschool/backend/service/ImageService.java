@@ -654,4 +654,78 @@ public class ImageService {
             return err;
         }
     }
+
+    public Map<String, Object> getAcademicSubjects(String classLevel) {
+        Map<String, Object> result = new HashMap<>();
+        if (classLevel == null || classLevel.isEmpty()) {
+            result.put("subjects", new ArrayList<>());
+            return result;
+        }
+        try {
+            com.mongodb.client.MongoCollection<org.bson.Document> col = mongoTemplate.getDb().getCollection("resource_images");
+            org.bson.Document query = new org.bson.Document("category", "ACADEMIC")
+                    .append("menu", "CLASS")
+                    .append("sub_menu", classLevel)
+                    .append("status", "active");
+            List<String> subjects = col.distinct("subject", query, String.class)
+                    .into(new ArrayList<>());
+            subjects.removeIf(s -> s == null || s.isEmpty());
+            Collections.sort(subjects);
+            result.put("subjects", subjects);
+        } catch (Exception e) {
+            logger.error("Error fetching subjects for {}: {}", classLevel, e.getMessage());
+            result.put("subjects", new ArrayList<>());
+        }
+        return result;
+    }
+
+    public Map<String, Object> getAcademicBookTypes(String classLevel, String subject) {
+        Map<String, Object> result = new HashMap<>();
+        if (classLevel == null || classLevel.isEmpty() || subject == null || subject.isEmpty()) {
+            result.put("book_types", new ArrayList<>());
+            return result;
+        }
+        try {
+            com.mongodb.client.MongoCollection<org.bson.Document> col = mongoTemplate.getDb().getCollection("resource_images");
+            org.bson.Document query = new org.bson.Document("category", "ACADEMIC")
+                    .append("menu", "CLASS")
+                    .append("sub_menu", classLevel)
+                    .append("subject", subject)
+                    .append("status", "active");
+            List<String> bookTypes = col.distinct("book_type", query, String.class)
+                    .into(new ArrayList<>());
+            bookTypes.removeIf(bt -> bt == null || bt.isEmpty());
+            Collections.sort(bookTypes);
+            result.put("book_types", bookTypes);
+        } catch (Exception e) {
+            logger.error("Error fetching book types for {}/{}: {}", classLevel, subject, e.getMessage());
+            result.put("book_types", new ArrayList<>());
+        }
+        return result;
+    }
+
+    public Map<String, Object> getAcademicUnitLessons(String classLevel, String subject, String bookType) {
+        Map<String, Object> result = new HashMap<>();
+        if (classLevel == null || classLevel.isEmpty() || subject == null || subject.isEmpty() || bookType == null || bookType.isEmpty()) {
+            result.put("unit_lessons", new ArrayList<>());
+            return result;
+        }
+        try {
+            com.mongodb.client.MongoCollection<org.bson.Document> col = mongoTemplate.getDb().getCollection("resource_images");
+            org.bson.Document query = new org.bson.Document("category", "ACADEMIC")
+                    .append("menu", "CLASS")
+                    .append("sub_menu", classLevel)
+                    .append("subject", subject)
+                    .append("book_type", bookType)
+                    .append("status", "active");
+            List<String> unitLessons = col.distinct("unit_lesson", query, String.class)
+                    .into(new ArrayList<>());
+            unitLessons.removeIf(ul -> ul == null || ul.isEmpty());
+            result.put("unit_lessons", unitLessons);
+        } catch (Exception e) {
+            logger.error("Error fetching unit lessons for {}/{}/{}: {}", classLevel, subject, bookType, e.getMessage());
+            result.put("unit_lessons", new ArrayList<>());
+        }
+        return result;
+    }
 }
