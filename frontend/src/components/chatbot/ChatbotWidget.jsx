@@ -1,28 +1,15 @@
 import React, { useEffect } from 'react';
 
-/**
- * MySchool Smart Search - Chatbot Widget Component
- * 
- * This component integrates the MySchool chatbot widget into the React application.
- * The chatbot provides:
- * - Smart Search with autocomplete
- * - Multilingual support (English, Telugu, Hindi, Gujarati)
- * - Voice Input (Speech-to-text)
- * - Responsive design for mobile and desktop
- */
 const ChatbotWidget = () => {
   useEffect(() => {
-    // Configuration
     const CHATBOT_URL = 'https://demo.myschoolchatbot.in';
     const WIDGET_ID = 'myschool-chatbot-widget';
     const IFRAME_ID = 'myschool-chatbot-iframe';
-    
-  
+
     if (document.getElementById(WIDGET_ID)) {
       return;
     }
 
-    // Create widget container
     const widgetContainer = document.createElement('div');
     widgetContainer.id = WIDGET_ID;
     widgetContainer.style.cssText = `
@@ -35,7 +22,6 @@ const ChatbotWidget = () => {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
 
-    // Create toggle button
     const toggleBtn = document.createElement('button');
     toggleBtn.id = 'myschool-chatbot-toggle';
     toggleBtn.style.cssText = `
@@ -60,11 +46,10 @@ const ChatbotWidget = () => {
     toggleBtn.innerHTML = '💬';
     toggleBtn.title = 'Open MySchool Smart Search';
 
-    // Create iframe with permissions for microphone, camera, geolocation
     const iframe = document.createElement('iframe');
     iframe.id = IFRAME_ID;
     iframe.src = CHATBOT_URL;
-    iframe.title = 'MySchool AI Assistant';
+    iframe.title = 'MySchool Smart Search';
     iframe.allow = 'microphone; camera; geolocation';
     iframe.style.cssText = `
       position: fixed;
@@ -80,7 +65,6 @@ const ChatbotWidget = () => {
       background: white;
     `;
 
-    // Handle responsive design for mobile
     const updateResponsiveStyles = () => {
       if (window.innerWidth < 480) {
         iframe.style.width = 'calc(100vw - 20px)';
@@ -94,10 +78,9 @@ const ChatbotWidget = () => {
         iframe.style.right = '20px';
       }
     };
-    
+
     updateResponsiveStyles();
 
-    // Toggle chatbot visibility
     const handleToggleClick = () => {
       const isVisible = iframe.style.display === 'block';
       iframe.style.display = isVisible ? 'none' : 'block';
@@ -106,9 +89,8 @@ const ChatbotWidget = () => {
     };
     toggleBtn.addEventListener('click', handleToggleClick);
 
-    // Close chatbot when clicking outside
     const handleClickOutside = (event) => {
-      if (!event.target.closest(`#${WIDGET_ID}`) && 
+      if (!event.target.closest(`#${WIDGET_ID}`) &&
           !event.target.closest(`#${IFRAME_ID}`) &&
           !event.target.closest(`#myschool-chatbot-toggle`)) {
         iframe.style.display = 'none';
@@ -118,10 +100,8 @@ const ChatbotWidget = () => {
     };
     document.addEventListener('click', handleClickOutside);
 
-    // Handle window resize for responsive design
     window.addEventListener('resize', updateResponsiveStyles);
 
-    // Add hover effect
     const handleMouseEnter = () => {
       toggleBtn.style.transform = 'scale(1.1)';
     };
@@ -131,12 +111,10 @@ const ChatbotWidget = () => {
     toggleBtn.addEventListener('mouseenter', handleMouseEnter);
     toggleBtn.addEventListener('mouseleave', handleMouseLeave);
 
-    // Append to body
     document.body.appendChild(widgetContainer);
     document.body.appendChild(toggleBtn);
     document.body.appendChild(iframe);
 
-    // Expose API for manual control
     window.MySchoolChatbot = {
       open: function() {
         const iframeEl = document.getElementById(IFRAME_ID);
@@ -168,15 +146,13 @@ const ChatbotWidget = () => {
       }
     };
 
-    // Cleanup function
     return () => {
       toggleBtn.removeEventListener('click', handleToggleClick);
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('resize', updateResponsiveStyles);
       toggleBtn.removeEventListener('mouseenter', handleMouseEnter);
       toggleBtn.removeEventListener('mouseleave', handleMouseLeave);
-      
-      // Remove elements from DOM
+
       if (document.getElementById(WIDGET_ID)) {
         document.getElementById(WIDGET_ID).remove();
       }
@@ -186,13 +162,11 @@ const ChatbotWidget = () => {
       if (document.getElementById(IFRAME_ID)) {
         document.getElementById(IFRAME_ID).remove();
       }
-      
-      // Clean up global API
+
       delete window.MySchoolChatbot;
     };
   }, []);
 
-  // This component doesn't render anything visible - it just sets up the chatbot widget
   return null;
 };
 

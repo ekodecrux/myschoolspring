@@ -14,7 +14,7 @@ public class HealthController {
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(
                 "status", "healthy",
-                "service", "MySchool Backend (Spring Boot)",
+                "service", "MySchool Backend",
                 "timestamp", Instant.now().toString()
         ));
     }
@@ -23,7 +23,7 @@ public class HealthController {
     public ResponseEntity<Map<String, Object>> apiHealth() {
         return ResponseEntity.ok(Map.of(
                 "status", "healthy",
-                "service", "MySchool Backend (Spring Boot)",
+                "service", "MySchool Backend",
                 "timestamp", Instant.now().toString()
         ));
     }

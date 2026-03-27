@@ -11,7 +11,6 @@ import com.myschool.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -35,7 +34,7 @@ public class ImageService {
     @Autowired private StorageService storageService;
     @Autowired private MongoTemplate mongoTemplate;
 
-        // List resource images with filtering and pagination (mirrors FastAPI /images/list)
+        // List resource images with filtering and pagination 
     public Map<String, Object> listImages(
             String category, String subcategory, String menu, String subMenu,
             String subject, String subTopic, String bookType, String unitLesson,
@@ -97,7 +96,7 @@ public class ImageService {
         );
     }
 
-        // Upload image to R2 and save metadata (mirrors FastAPI /images/upload)
+        // Upload image to R2 and save metadata 
     public Map<String, Object> uploadImage(
             MultipartFile file, String category, String subcategory, String menu,
             String subMenu, String subject, String subTopic, String bookType,
@@ -305,13 +304,13 @@ public class ImageService {
         return Map.of("message", "Image deleted successfully");
     }
 
-        // List images from R2 folder structure (mirrors FastAPI /images/r2/list)
+        // List images from R2 folder structure 
     public Map<String, Object> listR2Images(String prefix) {
         List<Map<String, Object>> objects = storageService.listObjects(prefix != null ? prefix : "");
         return Map.of("data", objects, "total", objects.size());
     }
 
-        // Get distinct filter values for image bank (mirrors FastAPI /images/filters)
+        // Get distinct filter values for image bank 
     public Map<String, Object> getImageFilters(String category, String subcategory) {
         Query query = new Query(Criteria.where("status").is("approved"));
         if (category != null && !category.isEmpty())
@@ -413,59 +412,235 @@ public class ImageService {
         throw new RuntimeException("PDF thumbnail not available - use direct R2 URL");
     }
 
-    public Map<String, Object> fetchImages(String folderPath, int limit, int skip, String search, String subject, String grade, User currentUser) {
+    public Map<String, Object> fetchImages(String folderPath, int imagesPerPage, String continuationToken, User currentUser) {
         try {
             com.mongodb.client.MongoCollection<org.bson.Document> col = mongoTemplate.getDb().getCollection("resource_images");
-            org.bson.Document query = new org.bson.Document("status",
-                new org.bson.Document("$in", java.util.Arrays.asList("active", "approved")));
-            if (folderPath != null && !folderPath.isEmpty()) {
-                query.append("s3_path", new org.bson.Document("$regex", "^" + folderPath).append("$options", "i"));
-            }
-            if (search != null && !search.isEmpty()) {
-                org.bson.Document searchDoc = new org.bson.Document("$regex", search).append("$options", "i");
-                query.append("$or", java.util.Arrays.asList(
-                    new org.bson.Document("title", searchDoc),
-                    new org.bson.Document("unit_lesson", searchDoc),
-                    new org.bson.Document("image_name", searchDoc)
-                ));
-            }
-            if (subject != null && !subject.isEmpty()) {
-                query.append("subject", subject);
-            }
-            if (grade != null && !grade.isEmpty()) {
-                query.append("sub_menu", new org.bson.Document("$regex", grade).append("$options", "i"));
+            org.bson.Document query = new org.bson.Document("status", "active");
+
+            // Build query based on folderPath
+            String[] parts = folderPath != null ? folderPath.split("/") : new String[0];
+            List<String> validParts = new ArrayList<>();
+            for (String p : parts) {
+                if (p != null && !p.isEmpty() && !p.equalsIgnoreCase("thumbnails")) {
+                    validParts.add(p);
+                }
             }
 
-            // ImageRenderer expects list as LinkedHashMap<s3_path, publicUrl>
-            // matching the original FastAPI format exactly
+            Map<String, String> categoryMap = new HashMap<>();
+            categoryMap.put("ACADEMIC", "ACADEMIC");
+            categoryMap.put("EARLYCAREER", "EARLY-CAREER");
+            categoryMap.put("EARLY_CAREER", "EARLY-CAREER");
+            categoryMap.put("EARLY-CAREER", "EARLY-CAREER");
+            categoryMap.put("EDUTAINMENT", "EDUTAINMENT");
+            categoryMap.put("PRINTRICH", "PRINT-RICH");
+            categoryMap.put("PRINT_RICH", "PRINT-RICH");
+            categoryMap.put("PRINT-RICH", "PRINT-RICH");
+            categoryMap.put("MAKER", "MAKER");
+            categoryMap.put("INFOHUB", "INFO-HUB");
+            categoryMap.put("INFO_HUB", "INFO-HUB");
+            categoryMap.put("INFO-HUB", "INFO-HUB");
+            categoryMap.put("ONE_CLICK_RESOURCE_CENTRE", "ONE CLICK RESOURCE CENTRE");
+            categoryMap.put("ONE CLICK RESOURCE CENTRE", "ONE CLICK RESOURCE CENTRE");
+            categoryMap.put("SECTIONS", "ONE CLICK RESOURCE CENTRE");
+
+            Map<String, String> menuNameMap = new HashMap<>();
+            menuNameMap.put("image bank", "IMAGE BANK");
+            menuNameMap.put("imagebank", "IMAGE BANK");
+            menuNameMap.put("image-bank", "IMAGE BANK");
+            menuNameMap.put("comics", "COMICS");
+            menuNameMap.put("rhymes", "RHYMES");
+            menuNameMap.put("visual worksheets", "VISUAL WORKSHEETS");
+            menuNameMap.put("visual-worksheets", "VISUAL WORKSHEETS");
+            menuNameMap.put("safety", "SAFETY");
+            menuNameMap.put("value education", "VALUE EDUCATION");
+            menuNameMap.put("value-education", "VALUE EDUCATION");
+            menuNameMap.put("art lessons", "ART LESSONS");
+            menuNameMap.put("art-lessons", "ART LESSONS");
+            menuNameMap.put("craft lessons", "CRAFT LESSONS");
+            menuNameMap.put("craft-lessons", "CRAFT LESSONS");
+            menuNameMap.put("computer lessons", "COMPUTER LESSONS");
+            menuNameMap.put("computer-lessons", "COMPUTER LESSONS");
+            menuNameMap.put("flash cards", "FLASH CARDS");
+            menuNameMap.put("flash-cards", "FLASH CARDS");
+            menuNameMap.put("gk & science", "GK & SCIENCE");
+            menuNameMap.put("gk science", "GK & SCIENCE");
+            menuNameMap.put("gk-science", "GK & SCIENCE");
+            menuNameMap.put("project charts", "PROJECT CHARTS");
+            menuNameMap.put("project-charts", "PROJECT CHARTS");
+            menuNameMap.put("puzzels & riddles", "PUZZELS & RIDDLES");
+            menuNameMap.put("puzzles riddles", "PUZZELS & RIDDLES");
+            menuNameMap.put("puzzles-riddles", "PUZZELS & RIDDLES");
+            menuNameMap.put("pictorial stories", "PICTORIAL STORIES");
+            menuNameMap.put("pictorial-stories", "PICTORIAL STORIES");
+            menuNameMap.put("picture stories", "PICTORIAL STORIES");
+            menuNameMap.put("picture-stories", "PICTORIAL STORIES");
+            menuNameMap.put("moral stories", "MORAL STORIES");
+            menuNameMap.put("moral-stories", "MORAL STORIES");
+            menuNameMap.put("learn hand writing", "LEARN HAND WRITING");
+            menuNameMap.put("learn-hand-writing", "LEARN HAND WRITING");
+            menuNameMap.put("offers", "OFFERS");
+            menuNameMap.put("donors", "DONORS");
+
+            boolean isOneClickMenu = false;
+            if (!validParts.isEmpty()) {
+                String firstPartUpper = validParts.get(0).toUpperCase().replace("-", "_").replace(" ", "_");
+                if (!"ACADEMIC".equals(firstPartUpper)) {
+                    if (validParts.size() > 1) {
+                        String secondPartLower = validParts.get(1).toLowerCase().replace("_", " ").replace("-", " ");
+                        if (menuNameMap.containsKey(secondPartLower)) {
+                            isOneClickMenu = true;
+                        }
+                    }
+                }
+            }
+
+            if (isOneClickMenu) {
+                query.append("category", "ONE CLICK RESOURCE CENTRE");
+                String menuLower = validParts.get(1).toLowerCase().replace("_", " ").replace("-", " ");
+                query.append("menu", menuNameMap.getOrDefault(menuLower, validParts.get(1).toUpperCase()));
+                if (validParts.size() > 2) {
+                    query.append("sub_menu", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                }
+            } else if (!validParts.isEmpty()) {
+                String firstPart = validParts.get(0).toUpperCase().replace("-", "_").replace(" ", "_");
+                
+                if (Arrays.asList("ONE_CLICK_RESOURCE_CENTRE", "ONE_CLICK_RESOURCE_CENTER", "SECTIONS").contains(firstPart)) {
+                    query.append("category", "ONE CLICK RESOURCE CENTRE");
+                    if (validParts.size() > 1) {
+                        String menuLower = validParts.get(1).toLowerCase().replace("_", " ");
+                        query.append("menu", menuNameMap.getOrDefault(menuLower, validParts.get(1).toUpperCase()));
+                    }
+                    if (validParts.size() > 2) {
+                        query.append("sub_menu", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                    }
+                } else if ("ACADEMIC".equals(firstPart) && validParts.size() > 1 && "IMAGE BANK".equals(validParts.get(1).toUpperCase().replace("_", " "))) {
+                    query.append("folder_path", "ACADEMIC/IMAGE BANK");
+                    if (validParts.size() > 2) {
+                        query.append("category", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                    }
+                    if (validParts.size() > 3) {
+                        query.append("subcategory", new org.bson.Document("$regex", "^" + validParts.get(3) + "$").append("$options", "i"));
+                    }
+                    if (validParts.size() > 4) {
+                        query.append("nested_category", new org.bson.Document("$regex", "^" + validParts.get(4) + "$").append("$options", "i"));
+                    }
+                } else {
+                    query.append("category", categoryMap.getOrDefault(firstPart, firstPart.replace("_", " ")));
+                    if (validParts.size() > 1) {
+                        String menuLower = validParts.get(1).toLowerCase().replace("_", " ").replace("-", " ");
+                        String menuDb = menuNameMap.get(menuLower);
+                        if (menuDb != null) {
+                            query.append("menu", menuDb);
+                        } else {
+                            query.append("menu", new org.bson.Document("$regex", "^" + validParts.get(1) + "$").append("$options", "i"));
+                        }
+                    }
+                    if (validParts.size() > 2) {
+                        query.append("sub_menu", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                    }
+                    if (validParts.size() > 3) {
+                        query.append("subject", new org.bson.Document("$regex", "^" + validParts.get(3) + "$").append("$options", "i"));
+                    }
+                    if (validParts.size() > 4) {
+                        query.append("book_type", new org.bson.Document("$regex", "^" + validParts.get(4) + "$").append("$options", "i"));
+                    }
+                    if (validParts.size() > 5) {
+                        query.append("unit_lesson", new org.bson.Document("$regex", "^" + validParts.get(5) + "$").append("$options", "i"));
+                    }
+                }
+            }
+
+            List<String> filters = new ArrayList<>();
+            String filterField = null;
+
+            String queryCategory = query.getString("category");
+            String queryMenu = null;
+            if (query.get("menu") instanceof String) {
+                queryMenu = query.getString("menu");
+            } else if (query.get("menu") instanceof org.bson.Document) {
+                queryMenu = ((org.bson.Document) query.get("menu")).getString("$regex");
+                if (queryMenu != null) queryMenu = queryMenu.replace("^", "").replace("$", "");
+            }
+
+            if ("ONE CLICK RESOURCE CENTRE".equals(queryCategory) && queryMenu != null) {
+                if (!query.containsKey("sub_menu")) {
+                    filterField = "sub_menu";
+                    org.bson.Document filterQuery = new org.bson.Document("category", queryCategory)
+                        .append("menu", queryMenu)
+                        .append("status", "active");
+                    for (String val : col.distinct(filterField, filterQuery, String.class)) {
+                        if (val != null && !val.isEmpty()) filters.add(val);
+                    }
+                } else if (!query.containsKey("subject")) {
+                    filterField = "subject";
+                    Object subMenuVal = query.get("sub_menu");
+                    org.bson.Document filterQuery = new org.bson.Document("category", queryCategory)
+                        .append("menu", queryMenu)
+                        .append("sub_menu", subMenuVal)
+                        .append("status", "active");
+                    for (String val : col.distinct(filterField, filterQuery, String.class)) {
+                        if (val != null && !val.isEmpty()) filters.add(val);
+                    }
+                }
+            } else if ("ACADEMIC/IMAGE BANK".equals(query.getString("folder_path")) || 
+                      (queryMenu != null && queryMenu.toUpperCase().contains("IMAGE BANK"))) {
+                
+                org.bson.Document baseFilterQuery = new org.bson.Document("folder_path", "ACADEMIC/IMAGE BANK");
+                
+                if (!query.containsKey("sub_menu") && !query.containsKey("category")) {
+                    filterField = "category";
+                    for (String val : col.distinct(filterField, baseFilterQuery, String.class)) {
+                        if (val != null && !val.isEmpty()) filters.add(val);
+                    }
+                } else if (query.containsKey("sub_menu") || query.containsKey("category")) {
+                    Object catObj = query.containsKey("sub_menu") ? query.get("sub_menu") : query.get("category");
+                    String catValue = null;
+                    if (catObj instanceof String) {
+                        catValue = (String) catObj;
+                    } else if (catObj instanceof org.bson.Document) {
+                        catValue = ((org.bson.Document) catObj).getString("$regex");
+                        if (catValue != null) catValue = catValue.replace("^", "").replace("$", "");
+                    }
+                    
+                    if (catValue != null) {
+                        filterField = "subcategory";
+                        org.bson.Document filterQuery = new org.bson.Document("folder_path", "ACADEMIC/IMAGE BANK")
+                            .append("category", new org.bson.Document("$regex", "^" + catValue + "$").append("$options", "i"));
+                        for (String val : col.distinct(filterField, filterQuery, String.class)) {
+                            if (val != null && !val.isEmpty()) filters.add(val);
+                        }
+                    }
+                }
+            }
+
+            Collections.sort(filters);
+
             java.util.Map<String, String> listDict = new java.util.LinkedHashMap<>();
-            col.find(query).skip(skip).limit(limit).sort(new org.bson.Document("uploaded_at", -1))
+            col.find(query).limit(imagesPerPage)
                 .forEach(doc -> {
                     String s3path = doc.getString("s3_path");
                     String url = doc.getString("url");
-                    if (s3path != null && url != null) {
-                        listDict.put(s3path, url);
+                    if (s3path == null || s3path.isEmpty()) s3path = url;
+                    
+                    if (s3path != null && !s3path.isEmpty()) {
+                        String finalUrl = url;
+                        if (finalUrl == null || finalUrl.isEmpty()) {
+                            finalUrl = doc.getString("thumbnail_url");
+                        }
+                        if (finalUrl == null) finalUrl = "";
+                        listDict.put(s3path, finalUrl);
                     }
                 });
 
             long total = col.countDocuments(query);
             java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
             result.put("list", listDict);
-            result.put("continuationToken", skip + limit < total ? String.valueOf(skip + limit) : null);
-            result.put("isTruncated", skip + limit < total);
+            result.put("continuationToken", null);
+            result.put("isTruncated", listDict.size() >= imagesPerPage);
             result.put("totalCount", total);
+            result.put("filters", filters);
+            result.put("filterField", filterField);
 
-            java.util.Set<String> filterSet = new java.util.LinkedHashSet<>();
-            String filterPrefix = (folderPath != null && !folderPath.isEmpty()) ? folderPath + "/" : "";
-            col.distinct("s3_path", query, String.class).forEach(p -> {
-                if (p != null && p.startsWith(filterPrefix)) {
-                    String rest = p.substring(filterPrefix.length());
-                    int slash = rest.indexOf("/");
-                    if (slash > 0) filterSet.add(rest.substring(0, slash));
-                }
-            });
-            result.put("filters", new java.util.ArrayList<>(filterSet));
-            result.put("filterField", "folder");
             return result;
         } catch (Exception e) {
             e.printStackTrace();
@@ -473,8 +648,9 @@ public class ImageService {
             err.put("list", new java.util.LinkedHashMap<>());
             err.put("totalCount", 0L);
             err.put("isTruncated", false);
+            err.put("filters", new ArrayList<>());
+            err.put("filterField", null);
             return err;
         }
     }
-
 }

@@ -98,7 +98,7 @@ public class UserController {
         return ResponseEntity.ok(userService.disableAccount(userId, currentUser));
     }
 
-    // Admin update any user's details (matches FastAPI /adminUpdateUser)
+    // Admin update any user's details 
     @PatchMapping("/adminUpdateUser")
     public ResponseEntity<Map<String, Object>> adminUpdateUser(
             @RequestBody Map<String, Object> body,

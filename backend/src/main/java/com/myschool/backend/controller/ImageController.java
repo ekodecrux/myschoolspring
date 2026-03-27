@@ -156,7 +156,7 @@ public class ImageController {
         }
     }
 
-    // Approve a pending image (admin route matching FastAPI /admin/approveImage)
+    // Approve a pending image 
     @PostMapping("/admin/approveImage")
     public ResponseEntity<Map<String, Object>> approveImageAdmin(
             @RequestBody Map<String, Object> body,
@@ -171,7 +171,7 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    // Reject a pending image (admin route matching FastAPI /admin/rejectImage)
+    // Reject a pending image 
     @PostMapping("/admin/rejectImage")
     public ResponseEntity<Map<String, Object>> rejectImageAdmin(
             @RequestBody Map<String, Object> body,
@@ -221,28 +221,21 @@ public class ImageController {
     public ResponseEntity<Map<String, Object>> fetchImagesPost(
             @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal User currentUser) {
-        // Frontend sends: { folderPath, imagesPerPage, page, filters... }
-        // Also accept snake_case variants for compatibility
         String folderPath = body.get("folderPath") != null ? (String) body.get("folderPath") :
                             body.get("folder_path") != null ? (String) body.get("folder_path") : "";
-        int limit = body.get("imagesPerPage") != null ? ((Number) body.get("imagesPerPage")).intValue() :
-                    body.get("images_per_page") != null ? ((Number) body.get("images_per_page")).intValue() : 20;
-        int page = body.get("page") != null ? ((Number) body.get("page")).intValue() : 0;
-        int skip = page * limit;
-        String search = (String) body.getOrDefault("search", null);
-        String subject = (String) body.getOrDefault("subject", null);
-        String grade = (String) body.getOrDefault("grade", null);
-        return ResponseEntity.ok(imageService.fetchImages(folderPath, limit, skip, search, subject, grade, currentUser));
+        int imagesPerPage = body.get("imagesPerPage") != null ? ((Number) body.get("imagesPerPage")).intValue() :
+                    body.get("images_per_page") != null ? ((Number) body.get("images_per_page")).intValue() : 100;
+        String continuationToken = body.get("continuationToken") != null ? String.valueOf(body.get("continuationToken")) : null;
+        return ResponseEntity.ok(imageService.fetchImages(folderPath, imagesPerPage, continuationToken, currentUser));
     }
 
     @GetMapping("/fetch")
     public ResponseEntity<Map<String, Object>> fetchImagesGet(
             @RequestParam(defaultValue = "") String folderPath,
-            @RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int skip,
-            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "100") int imagesPerPage,
+            @RequestParam(required = false) String continuationToken,
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(imageService.fetchImages(folderPath, limit, skip, search, null, null, currentUser));
+        return ResponseEntity.ok(imageService.fetchImages(folderPath, imagesPerPage, continuationToken, currentUser));
     }
 
 

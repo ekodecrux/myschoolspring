@@ -23,7 +23,7 @@ public class Bcrypt2bPasswordEncoder implements PasswordEncoder {
         if (encodedPassword == null || encodedPassword.isEmpty()) {
             return false;
         }
-        // Normalise $2b$ -> $2a$ so Spring can verify Python-generated hashes
+        // Normalise $2b$ -> $2a$ so Spring can verify legacy hashes
         String normalised = encodedPassword.startsWith("$2b$")
                 ? "$2a$" + encodedPassword.substring(4)
                 : encodedPassword;

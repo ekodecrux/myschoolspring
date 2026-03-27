@@ -140,7 +140,6 @@ const Menubar = (props) => {
   }
   const handleEnterKey = (e) => {
     if (e.keyCode === 13) {
-      // Issue 15: Trim and validate search text before navigating
       const trimmedSearch = searchText.trim();
       if (!trimmedSearch) {
         return; // Don't navigate if search is empty

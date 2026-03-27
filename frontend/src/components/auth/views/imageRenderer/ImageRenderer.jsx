@@ -885,7 +885,6 @@ const ImageRenderer = (props) => {
           "Authorization": `Bearer ${accessToken}`,
           "Access-Control-Allow-Origin": "*",
         };
-        // Fixed: Backend expects { ids: [...] } not just [...]
         let data = { ids: selectedFileID };
         dispatch(
           DeleteMyImages({

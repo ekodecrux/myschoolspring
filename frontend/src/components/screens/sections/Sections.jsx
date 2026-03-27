@@ -99,7 +99,6 @@ const Sections = () => {
             return 'ACADEMIC/IMAGE BANK';
         }
         
-        // Issue 11: Complete path mapping for all One Click Resource Center sections
         const pathMap = {
             'comics': 'one_click_resource_centre/comics',
             'rhymes': 'one_click_resource_centre/rhymes',

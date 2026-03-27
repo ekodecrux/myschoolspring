@@ -35,7 +35,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.verifyRazorpayPayment(body, currentUser));
     }
 
-    // Alias matching original FastAPI route name
+    // Legacy route alias
     @PostMapping("/razorpay/verify-payment")
     public ResponseEntity<Map<String, Object>> verifyRazorpayPaymentAlias(
             @RequestBody Map<String, Object> body,
@@ -62,7 +62,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getOrderHistory(currentUser));
     }
 
-    // Returns current user's credit balance (matches FastAPI /user/credits)
+    // Returns current user's credit balance 
     @GetMapping("/user/credits")
     public ResponseEntity<Map<String, Object>> getUserCredits(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(paymentService.getUserCredits(currentUser));
