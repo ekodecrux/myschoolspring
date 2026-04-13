@@ -2,6 +2,10 @@ import React, { useEffect } from 'react';
 
 const ChatbotWidget = () => {
   useEffect(() => {
+    if (window.location.pathname === '/') {
+      return undefined;
+    }
+
     const CHATBOT_URL = 'https://demo.myschoolchatbot.in';
     const WIDGET_ID = 'myschool-chatbot-widget';
     const IFRAME_ID = 'myschool-chatbot-iframe';
