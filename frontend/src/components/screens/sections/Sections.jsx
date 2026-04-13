@@ -54,8 +54,8 @@ const Sections = () => {
             'learn-hand-writing': 'one_click_resource_centre/learn hand writing',
             'project-charts': 'one_click_resource_centre/project charts',
             'puzzles-riddles': 'one_click_resource_centre/puzzels & riddles',
-            'image-bank': 'ACADEMIC/IMAGE BANK',
-            'imagebank': 'ACADEMIC/IMAGE BANK',
+            'image-bank': 'one_click_resource_centre/image-bank',
+            'imagebank': 'one_click_resource_centre/image-bank',
             'smart-wall': 'one_click_resource_centre/smart wall',
             'dictionary': 'one_click_resource_centre/dictionary',
             'makers': 'MAKER',
@@ -89,14 +89,13 @@ const Sections = () => {
         const menuItem = params.navbarMenuItem?.toLowerCase();
         const subMenuItem = params.navbarMenuSubItem?.toLowerCase();
         
-        // For Image Bank, include the category from URL
+        // For Image Bank in sections (One Click Resource Center), use one_click_resource_centre/image-bank
         if (menuItem === 'image-bank' || menuItem === 'imagebank') {
             if (subMenuItem) {
-                // Convert URL segment to category name (e.g., 'animals' -> 'ANIMALS')
                 const category = subMenuItem.replace(/-/g, ' ').toUpperCase();
-                return `ACADEMIC/IMAGE BANK/${category}`;
+                return `one_click_resource_centre/image-bank/${category}`;
             }
-            return 'ACADEMIC/IMAGE BANK';
+            return 'one_click_resource_centre/image-bank';
         }
         
         const pathMap = {

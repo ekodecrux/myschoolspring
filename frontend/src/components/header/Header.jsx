@@ -13,7 +13,7 @@ import { AppBar, Drawer, Typography } from "@mui/material";
 import Navbar from "./Navbar/Navbar";
 import Menubar from "./Menubar/Menubar";
 import MegaMenu from "./MegaMenu/Index";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import DynamicBreadcrumb from "../../customTheme/breadcrumbs/breadcrumbs";
 import home from "../../assests/homeScreen/home.svg";
 import { useDispatch, useSelector } from "react-redux";
@@ -50,7 +50,10 @@ const Header = React.forwardRef((props, ref) => {
   const [breadcrumbPad, setBreadcrumbPad] = React.useState(0)
   const { appType } = useSelector((state) => state.login);
   const headerLogoRef = React.useRef(null)
+  const userCollapsed = React.useRef(false)
+  const [megaMenuCollapsed, setMegaMenuCollapsed] = React.useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const dispatch = useDispatch()
   // let menuItems = []
   React.useEffect(() => {
@@ -58,13 +61,24 @@ const Header = React.forwardRef((props, ref) => {
   }, [headerLogoRef?.current?.clientWidth])
   const getSearch = () => {
     let search = location.search.split("&")
-    if (search.length === 2) {
+    if (search.length === 2 && !userCollapsed.current) {
       setSelectedNavbar(parseInt(search[0].match(/(\d+)/)[0]))        // Like Grade, class, etc
       setSelectedOverlayMenu(parseInt(search[1].match(/(\d+)/)[0]))       // Like Grade 1 and all
+      setMegaMenuCollapsed(false)
       handleMenubarData()
     }
   }
   useEffect(getSearch)
+
+  // When navigating to/from imagebank, refresh menubar data to show correct sub-filters
+  useEffect(() => {
+    const pathname = location.pathname.toLowerCase();
+    if (pathname.includes('imagebank') || pathname.includes('image-bank')) {
+      handleMenubarData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
   const getMainRoute = () => {
     let path = location.pathname.split('/').filter(el => el).filter(el => el !== "views")
     // alert(path[0]);
@@ -100,13 +114,25 @@ const Header = React.forwardRef((props, ref) => {
   // alert(path);
   // {path === "/views/academic" ?  }
   const handleMenubarData = () => {
-    // {path == "/views/academic" ? () : ()}
-    // var path = location.pathname.split('/').filter(el => el).filter(el => el !== "views")
-    let data = menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.children
-    if (data && data.length !== 0 && data[0]?.title !== "All") {
-      data.unshift({ title: "All", children: [...data] })
+    const pathname = location.pathname.toLowerCase();
+    const isImageBank = pathname.includes('imagebank') || pathname.includes('image-bank');
+
+    let data;
+    if (isImageBank) {
+      // For Image Bank: show top-level Image Bank categories (ANIMALS, BIRDS, FLOWERS...) as menu tabs
+      // Find the IMAGEBANK item in menuItems
+      const imageBankItem = menuItems.find(item => item.title === 'IMAGEBANK');
+      data = imageBankItem ? [...imageBankItem.children] : [];
+      // Filter out file entries (only show directories)
+      data = data.filter(item => item.type === 'directory' || !item.type);
+    } else {
+      data = menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.children;
     }
-    setMenubarData(data)
+
+    if (data && data.length !== 0 && data[0]?.title !== 'All') {
+      data = [{ title: 'All', children: [...data] }, ...data];
+    }
+    setMenubarData(data);
   }
   const handleImageFetch = (menuType, navbarIndex, overlayIndex) => {
     let path = `${getMainRoute().toUpperCase()}/thumbnails/${menuItems[selectedNavBar]?.title}/${menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.title}/`
@@ -207,15 +233,18 @@ const Header = React.forwardRef((props, ref) => {
           handleSelectedChild={setSelectedOverlayMenu} active={selectedNavBar} />
         {selectedNavBar !== 3 && !isMobile ? <Menubar active={selectedNavBar}
           data={menubarData}
-          handleSelectedMenuItem={setSelectedMegaMenuItem} selected={selectedMegaMenuItem} /> : null}
+          handleSelectedMenuItem={setSelectedMegaMenuItem} selected={selectedMegaMenuItem}
+          megaMenuCollapsed={megaMenuCollapsed}
+          onExpandMegaMenu={() => { userCollapsed.current = false; setMegaMenuCollapsed(false); }} /> : null}
       </AppBar>
-      {selectedNavBar !== null && selectedOverlayMenu !== null &&
+      {selectedNavBar !== null && selectedOverlayMenu !== null && !megaMenuCollapsed &&
         menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.children.length !== 0 && !isMobile ?
         <MegaMenu style={{ marginTop: 180 }}
           getPrevPath={ReturnFolderPath}
           categoryTitle={menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.title}
           data={menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.children ?
-            menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.children[selectedMegaMenuItem] : null} /> :
+            menuItems[selectedNavBar]?.children[selectedOverlayMenu]?.children[selectedMegaMenuItem] : null}
+          onCollapse={() => { userCollapsed.current = true; setMegaMenuCollapsed(true); }} /> :
         <div style={{ marginTop: ref.current ? ref.current.clientHeight : 167 }}></div>}
       {isMobile ?
         <Drawer open={drawerOpen}

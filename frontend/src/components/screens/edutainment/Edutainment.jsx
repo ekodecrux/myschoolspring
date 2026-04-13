@@ -1,9 +1,12 @@
 import React from 'react'
+import EmptyState from '../../common/EmptyState'
+
 const Edutainment = () => {
     return (
-        <>
-            Edutainment
-        </>
+        <EmptyState
+            message="Edutainment content coming soon"
+            subMessage="We are working on adding exciting edutainment content for you. Please check back later."
+        />
     )
 }
 export default Edutainment

@@ -13,9 +13,11 @@ import { Login } from '../../auth/login/Login'
 import { SignUp } from '../../auth/signUp/SignUp'
 import { SearchImages } from '../../../redux/fetchSearchSlice';
 import AcademicFilter from '../../../uicomponent/filter/AcademicFilter'
+import { clearSelectedLabel } from '../../../redux/selectedLabelSlice'
 
 const Academics = (props, state) => {
     const { list, continuationToken, loading, filters: apiFilters, filterField, totalCount, isTruncated } = useSelector(state => state.api)
+    const selectedLabel = useSelector(state => state.selectedLabel)
     const [data, setData] = useState([])
     const [tab, setTab] = useState(0)
     const [open, setOpen] = useState(false)
@@ -237,7 +239,7 @@ const Academics = (props, state) => {
         return 'one_click_resource_centre/image bank';
     };
     
-    // Handle hierarchical filter selection for Image Bank - SINGLE LEVEL only
+    // Handle hierarchical filter selection for Image Bank - MULTI LEVEL (append)
     const handleFilterClick = (filter) => {
         const basePath = getImageBankBasePath();
         
@@ -248,12 +250,11 @@ const Academics = (props, state) => {
             setSelectedFilter('ALL');
             handleFetchImages(basePath);
         } else {
-            // For Image Bank, we only have ONE level of sub-categories
-            // So clicking a filter should REPLACE the current selection, not append
-            const newPath = `${basePath}/${filter}`;
+            // Append filter to existing breadcrumb for multi-level navigation
+            const newBreadcrumb = [...filterBreadcrumb, filter];
+            const newPath = `${basePath}/${newBreadcrumb.join('/')}`;
             
-            // Replace breadcrumb with single item (not append)
-            setFilterBreadcrumb([filter]);
+            setFilterBreadcrumb(newBreadcrumb);
             setCurrentFilterPath(newPath);
             setSelectedFilter(filter);
             handleFetchImages(newPath);
@@ -310,6 +311,42 @@ const Academics = (props, state) => {
                     <AcademicFilter loadImages={handleFetchImages} />
                 )}
                 
+                {/* Showing label: visible above image grid for Academic class pages */}
+                {isAcademicClassPage() && (() => {
+                    // Get class from URL
+                    const parts = location.pathname.toLowerCase().split('/').filter(p => p);
+                    const classIndex = parts.indexOf('class');
+                    const classLabel = classIndex !== -1 && parts[classIndex + 1]
+                        ? `Class ${parts[classIndex + 1].replace('class-', '').toUpperCase()}`
+                        : null;
+                    // Get subject, bookType, lesson from Redux (set by Menubar/ItemsContainer/AcademicFilter)
+                    const subjectLabel = selectedLabel?.subject
+                        ? selectedLabel.subject.toUpperCase()
+                        : null;
+                    const bookTypeLabel = selectedLabel?.bookType
+                        ? selectedLabel.bookType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                        : null;
+                    const lessonLabel = selectedLabel?.lesson
+                        ? selectedLabel.lesson
+                        : null;
+                    const crumbs = [classLabel, subjectLabel, bookTypeLabel, lessonLabel].filter(Boolean);
+                    if (crumbs.length < 2) return null;
+                    return (
+                        <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                Showing:
+                            </Typography>
+                            {crumbs.map((crumb, idx) => (
+                                <React.Fragment key={idx}>
+                                    <Typography variant="body2" color={idx === crumbs.length - 1 ? 'primary' : 'text.secondary'} sx={{ fontWeight: idx === crumbs.length - 1 ? 600 : 400 }}>
+                                        {crumb}
+                                    </Typography>
+                                    {idx < crumbs.length - 1 && <Typography variant="body2" color="text.secondary">›</Typography>}
+                                </React.Fragment>
+                            ))}
+                        </Box>
+                    );
+                })()}
                 <div className='academicsContainer'>
                     <div className={isMobile ? 'mobGutter' : 'homeGutter'} />
                     <div className='academicsWrapper'>

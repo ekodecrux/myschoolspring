@@ -4,10 +4,13 @@ import { LeftArrow, RightArrow } from './Arrow';
 import useDrag from '../../customTheme/signUpMenu/useDrag';
 import "../../customTheme/signUpMenu/hideScrollBar.css";
 import { useLocation } from "react-router-dom";
+import { useDispatch } from 'react-redux';
+import { setSelectedLabel } from '../../redux/selectedLabelSlice';
 import './AcademicFilter.css';
 
 const AcademicFilter = ({ loadImages }) => {
     const location = useLocation();
+    const dispatch = useDispatch();
     const [bookTypes, setBookTypes] = useState([]);
     const [unitLessons, setUnitLessons] = useState([]);
     const [selectedBookType, setSelectedBookType] = useState(null);
@@ -160,6 +163,13 @@ const AcademicFilter = ({ loadImages }) => {
         if (dragging) return;
         setSelectedBookType(bookType);
         setSelectedLesson(null);
+        // Update Redux selectedLabel so Academics.jsx Showing label updates
+        const currentSubject = getCurrentSubjectFromUrl();
+        dispatch(setSelectedLabel({
+            subject: currentSubject ? currentSubject.toLowerCase() : null,
+            bookType: bookType ? bookType.toLowerCase() : null,
+            lesson: null
+        }));
     };
 
     const handleLessonClick = (lesson) => {
@@ -171,6 +181,12 @@ const AcademicFilter = ({ loadImages }) => {
         if (currentClass && currentSubject && selectedBookType) {
             loadImages(`academic/class/${currentClass.toLowerCase()}/${currentSubject.toLowerCase()}/${selectedBookType}/${lesson}`);
         }
+        // Update Redux selectedLabel so Academics.jsx Showing label updates
+        dispatch(setSelectedLabel({
+            subject: currentSubject ? currentSubject.toLowerCase() : null,
+            bookType: selectedBookType ? selectedBookType.toLowerCase() : null,
+            lesson: lesson
+        }));
     };
 
     const formatBookTypeName = (bookType) => {

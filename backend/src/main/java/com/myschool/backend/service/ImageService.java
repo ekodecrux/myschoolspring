@@ -45,7 +45,7 @@ public class ImageService {
         Query query = new Query();
 
         // Status filter - non-admins see only approved
-        if ("SUPER_ADMIN".equals(currentUser.getRole())) {
+        if (currentUser != null && "SUPER_ADMIN".equals(currentUser.getRole())) {
             if (status != null && !status.isEmpty()) {
                 query.addCriteria(Criteria.where("status").is(status));
             }
@@ -440,9 +440,11 @@ public class ImageService {
             categoryMap.put("INFOHUB", "INFO-HUB");
             categoryMap.put("INFO_HUB", "INFO-HUB");
             categoryMap.put("INFO-HUB", "INFO-HUB");
-            categoryMap.put("ONE_CLICK_RESOURCE_CENTRE", "ONE CLICK RESOURCE CENTRE");
-            categoryMap.put("ONE CLICK RESOURCE CENTRE", "ONE CLICK RESOURCE CENTRE");
-            categoryMap.put("SECTIONS", "ONE CLICK RESOURCE CENTRE");
+            categoryMap.put("ONE_CLICK_RESOURCE_CENTRE", "ONE CLICK RESOURCE CENTER");
+            categoryMap.put("ONE CLICK RESOURCE CENTRE", "ONE CLICK RESOURCE CENTER");
+            categoryMap.put("ONE_CLICK_RESOURCE_CENTER", "ONE CLICK RESOURCE CENTER");
+            categoryMap.put("ONE CLICK RESOURCE CENTER", "ONE CLICK RESOURCE CENTER");
+            categoryMap.put("SECTIONS", "ONE CLICK RESOURCE CENTER");
 
             Map<String, String> menuNameMap = new HashMap<>();
             menuNameMap.put("image bank", "IMAGE BANK");
@@ -496,23 +498,33 @@ public class ImageService {
             }
 
             if (isOneClickMenu) {
-                query.append("category", "ONE CLICK RESOURCE CENTRE");
+                query.append("category", "ONE CLICK RESOURCE CENTER");
+                // CENTER category uses menu=WEBP and sub_menu=SECTION_NAME
+                query.append("menu", "WEBP");
                 String menuLower = validParts.get(1).toLowerCase().replace("_", " ").replace("-", " ");
-                query.append("menu", menuNameMap.getOrDefault(menuLower, validParts.get(1).toUpperCase()));
+                query.append("sub_menu", menuNameMap.getOrDefault(menuLower, validParts.get(1).toUpperCase()));
                 if (validParts.size() > 2) {
-                    query.append("sub_menu", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                    query.append("subject", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                }
+                if (validParts.size() > 3) {
+                    query.append("book_type", new org.bson.Document("$regex", "^" + validParts.get(3) + "$").append("$options", "i"));
                 }
             } else if (!validParts.isEmpty()) {
                 String firstPart = validParts.get(0).toUpperCase().replace("-", "_").replace(" ", "_");
                 
                 if (Arrays.asList("ONE_CLICK_RESOURCE_CENTRE", "ONE_CLICK_RESOURCE_CENTER", "SECTIONS").contains(firstPart)) {
-                    query.append("category", "ONE CLICK RESOURCE CENTRE");
+                    query.append("category", "ONE CLICK RESOURCE CENTER");
+                    // CENTER category uses menu=WEBP and sub_menu=SECTION_NAME
+                    query.append("menu", "WEBP");
                     if (validParts.size() > 1) {
                         String menuLower = validParts.get(1).toLowerCase().replace("_", " ");
-                        query.append("menu", menuNameMap.getOrDefault(menuLower, validParts.get(1).toUpperCase()));
+                        query.append("sub_menu", menuNameMap.getOrDefault(menuLower, validParts.get(1).toUpperCase()));
                     }
                     if (validParts.size() > 2) {
-                        query.append("sub_menu", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                        query.append("subject", new org.bson.Document("$regex", "^" + validParts.get(2) + "$").append("$options", "i"));
+                    }
+                    if (validParts.size() > 3) {
+                        query.append("book_type", new org.bson.Document("$regex", "^" + validParts.get(3) + "$").append("$options", "i"));
                     }
                 } else if ("ACADEMIC".equals(firstPart) && validParts.size() > 1 && "IMAGE BANK".equals(validParts.get(1).toUpperCase().replace("_", " "))) {
                     query.append("folder_path", "ACADEMIC/IMAGE BANK");
@@ -522,9 +534,9 @@ public class ImageService {
                     if (validParts.size() > 3) {
                         query.append("subcategory", new org.bson.Document("$regex", "^" + validParts.get(3) + "$").append("$options", "i"));
                     }
-                    if (validParts.size() > 4) {
-                        query.append("nested_category", new org.bson.Document("$regex", "^" + validParts.get(4) + "$").append("$options", "i"));
-                    }
+                    // Level 4+ (e.g. ACADEMIC/IMAGE BANK/ANIMALS/DOMESTIC ANIMALS/IMAGES)
+                    // The 5th part (index 4) is just a folder name in R2 path (like "IMAGES"), not a stored field.
+                    // Do NOT add it as a query filter - images are already fully identified by folder_path+category+subcategory.
                 } else {
                     query.append("category", categoryMap.getOrDefault(firstPart, firstPart.replace("_", " ")));
                     if (validParts.size() > 1) {
@@ -554,7 +566,14 @@ public class ImageService {
             List<String> filters = new ArrayList<>();
             String filterField = null;
 
-            String queryCategory = query.getString("category");
+            // Safely extract category - may be a plain String or a regex Document
+            String queryCategory = null;
+            if (query.get("category") instanceof String) {
+                queryCategory = query.getString("category");
+            } else if (query.get("category") instanceof org.bson.Document) {
+                queryCategory = ((org.bson.Document) query.get("category")).getString("$regex");
+                if (queryCategory != null) queryCategory = queryCategory.replace("^", "").replace("$", "");
+            }
             String queryMenu = null;
             if (query.get("menu") instanceof String) {
                 queryMenu = query.getString("menu");
@@ -563,22 +582,29 @@ public class ImageService {
                 if (queryMenu != null) queryMenu = queryMenu.replace("^", "").replace("$", "");
             }
 
-            if ("ONE CLICK RESOURCE CENTRE".equals(queryCategory) && queryMenu != null) {
-                if (!query.containsKey("sub_menu")) {
-                    filterField = "sub_menu";
+            if ("ONE CLICK RESOURCE CENTER".equals(queryCategory) && queryMenu != null) {
+                // CENTER category: menu=WEBP, sub_menu=section, subject=class level, book_type=type
+                if (!query.containsKey("subject")) {
+                    filterField = "subject";
                     org.bson.Document filterQuery = new org.bson.Document("category", queryCategory)
                         .append("menu", queryMenu)
                         .append("status", "active");
+                    if (query.containsKey("sub_menu")) {
+                        filterQuery.append("sub_menu", query.get("sub_menu"));
+                    }
                     for (String val : col.distinct(filterField, filterQuery, String.class)) {
                         if (val != null && !val.isEmpty()) filters.add(val);
                     }
-                } else if (!query.containsKey("subject")) {
-                    filterField = "subject";
-                    Object subMenuVal = query.get("sub_menu");
+                } else if (!query.containsKey("book_type")) {
+                    filterField = "book_type";
+                    Object subjectVal = query.get("subject");
                     org.bson.Document filterQuery = new org.bson.Document("category", queryCategory)
                         .append("menu", queryMenu)
-                        .append("sub_menu", subMenuVal)
                         .append("status", "active");
+                    if (query.containsKey("sub_menu")) {
+                        filterQuery.append("sub_menu", query.get("sub_menu"));
+                    }
+                    filterQuery.append("subject", subjectVal);
                     for (String val : col.distinct(filterField, filterQuery, String.class)) {
                         if (val != null && !val.isEmpty()) filters.add(val);
                     }
@@ -589,11 +615,13 @@ public class ImageService {
                 org.bson.Document baseFilterQuery = new org.bson.Document("folder_path", "ACADEMIC/IMAGE BANK");
                 
                 if (!query.containsKey("sub_menu") && !query.containsKey("category")) {
+                    // Level 1: show category filters (ANIMALS, BIRDS, etc.)
                     filterField = "category";
                     for (String val : col.distinct(filterField, baseFilterQuery, String.class)) {
                         if (val != null && !val.isEmpty()) filters.add(val);
                     }
-                } else if (query.containsKey("sub_menu") || query.containsKey("category")) {
+                } else if ((query.containsKey("sub_menu") || query.containsKey("category")) && !query.containsKey("subcategory")) {
+                    // Level 2: category is set, show subcategory filters (DOMESTIC ANIMALS, WILD ANIMALS, etc.)
                     Object catObj = query.containsKey("sub_menu") ? query.get("sub_menu") : query.get("category");
                     String catValue = null;
                     if (catObj instanceof String) {
@@ -612,6 +640,7 @@ public class ImageService {
                         }
                     }
                 }
+                // Level 3+: subcategory is set - no more filters, images load directly
             }
 
             Collections.sort(filters);

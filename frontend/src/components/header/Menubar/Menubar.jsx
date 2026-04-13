@@ -19,9 +19,12 @@ import { useSelector } from "react-redux";
 import { logoutUser } from "../../../redux/authSlice";
 import { BrowserView, isMobile as isMobileDevice, MobileView } from "react-device-detect";
 import { loadImages } from "../../../redux/apiSlice";
+import { setSelectedLabel } from "../../../redux/selectedLabelSlice";
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
 import useDrag from "../../../customTheme/signUpMenu/useDrag";
 import { LeftArrow, RightArrow } from "./MenubarArrow";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
 // Custom hook to detect mobile view (combines user agent detection with viewport width)
 const useMobileView = () => {
@@ -88,21 +91,15 @@ const Menubar = (props) => {
     const isImageBank = pathname.includes('imagebank') || pathname.includes('image-bank');
     
     if (isImageBank) {
-      // For Image Bank, build path directly
-      // Extract category from pathname (e.g., /views/academic/imagebank/animals -> ANIMALS)
-      const parts = pathname.split('/').filter(p => p);
-      const imagebankIndex = parts.findIndex(p => p === 'imagebank' || p === 'image-bank');
-      const category = imagebankIndex !== -1 && parts[imagebankIndex + 1] 
-        ? parts[imagebankIndex + 1].replace(/-/g, ' ').toUpperCase() 
-        : '';
-      
+      // For Image Bank, the menubar tabs ARE the top-level categories (ANIMALS, BIRDS, FLOWERS...)
+      // Clicking a tab should load that category directly, not treat it as a sub-filter
       let path;
       if (menu.title === 'All' || menu.title === 'ALL') {
-        // ALL - show all images in the category (e.g., ACADEMIC/IMAGE BANK/ANIMALS)
-        path = `ACADEMIC/IMAGE BANK/${category}`;
+        // ALL tab - show all Image Bank images
+        path = 'ACADEMIC/IMAGE BANK';
       } else {
-        // Specific subcategory (e.g., ACADEMIC/IMAGE BANK/ANIMALS/DOMESTIC ANIMALS)
-        path = `ACADEMIC/IMAGE BANK/${category}/${menu.title.toUpperCase()}`;
+        // Category tab (ANIMALS, BIRDS, FLOWERS...) - load that category directly
+        path = `ACADEMIC/IMAGE BANK/${menu.title.toUpperCase()}`;
       }
       
       let header = {
@@ -115,6 +112,14 @@ const Menubar = (props) => {
         body: { folderPath: path, imagesPerPage: 50 }
       }));
       return;
+    }
+    
+    // For CLASS pages, dispatch setSelectedLabel so Academics.jsx can show the breadcrumb
+    const isClassPage = pathname.includes('/academic/class/');
+    if (isClassPage && menu.title !== 'All' && menu.title !== 'ALL') {
+      dispatch(setSelectedLabel({ subject: menu.title.toLowerCase(), bookType: null }));
+    } else if (isClassPage && (menu.title === 'All' || menu.title === 'ALL')) {
+      dispatch(setSelectedLabel({ subject: null, bookType: null }));
     }
     
     // For CLASS and other sections, use original logic with thumbnails
@@ -235,7 +240,18 @@ const Menubar = (props) => {
         ) : (
           <ul className="menubarItems"> </ul>
         )}
+
         {!isMobile ? (
+          <>
+          {props.megaMenuCollapsed && props.onExpandMegaMenu ? (
+            <div
+              className="megaMenuExpandBtn"
+              onClick={props.onExpandMegaMenu}
+              title="Expand panel"
+            >
+              <ExpandMoreIcon style={{ color: '#fff', fontSize: 22 }} />
+            </div>
+          ) : null}
           <div className="menubarSearch">
             <TextField
               autoComplete="off"
@@ -257,6 +273,7 @@ const Menubar = (props) => {
               }}
             />
           </div>
+          </>
         ) : null}
         {isLoggedin && !isMobile ? (
           <div className="navWrapper avatarMenubarPosition">
