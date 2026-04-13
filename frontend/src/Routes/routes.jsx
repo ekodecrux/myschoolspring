@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import Home from "../components/homeScreen/Home";
+import SlideCloneHome from "../components/homeScreen/SlideCloneHome";
 import {
   BrowserRouter as Router,
   Routes as Nav,
@@ -79,7 +79,7 @@ const Routes = () => {
       <Suspense fallback={<PageLoader />}>
       <Nav>
         <Route path="/launch" element={<Launch />} />
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<SlideCloneHome />} />
         {/* </Route> */}
         <Route path="/views" element={<ScreenInitializer />}>
           <Route path="/views/academic" element={<Academics />}>
