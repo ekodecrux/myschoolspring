@@ -18,13 +18,15 @@ import iconMakers from "../../assests/slideClone/root_14_0_1_0_0_10_x6823982_y34
 import iconInfoHub from "../../assests/slideClone/root_14_0_1_2_x8127553_y6038692.png";
 import iconExtra from "../../assests/slideClone/root_14_0_1_0_0_12_x7870474_y3434673.png";
 
+const navItems = ["Individuals", "Businesses", "Schools", "Institutions", "Governments"];
+
 const quickLinks = [
-  { label: "ACADEMIC", icon: iconAcademic, color: "#39aef4" },
-  { label: "ENRICH", icon: iconExtra, color: "#f5c530" },
-  { label: "EDUTAINMENT", icon: iconEdutainment, color: "#48bb78" },
-  { label: "READ & PRINT", icon: iconReadPrint, color: "#ed8936" },
-  { label: "MAKERS", icon: iconMakers, color: "#805ad5" },
-  { label: "INFO HUB", icon: iconInfoHub, color: "#f56565" },
+  { label: "ACADEMIC", icon: iconAcademic, color: "#35a8ef" },
+  { label: "ENRICH", icon: iconExtra, color: "#f3c12c" },
+  { label: "EDUTAINMENT", icon: iconEdutainment, color: "#47b95f" },
+  { label: "READ & PRINT", icon: iconReadPrint, color: "#f07d28" },
+  { label: "MAKERS", icon: iconMakers, color: "#7f56d9" },
+  { label: "INFO HUB", icon: iconInfoHub, color: "#f44f4f" },
 ];
 
 export default function SlideCloneHome() {
@@ -35,29 +37,27 @@ export default function SlideCloneHome() {
 
         <header className="slide-top-nav">
           <div className="slide-top-nav-left">
-            <span>Individuals</span>
-            <span>Businesses</span>
-            <span>Schools</span>
-            <span>Institutions</span>
-            <span>Governments</span>
+            {navItems.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
           </div>
           <div className="slide-top-nav-right">CONTACT US</div>
         </header>
 
-        <img className="slide-badge" src={topRightBadge} alt="Partner badge" />
+        <img className="slide-badge" src={topRightBadge} alt="Google for Education partner" />
 
         <div className="slide-logo-wrap">
           <img className="slide-logo-main" src={logoMain} alt="MySchool logo" />
           <img className="slide-logo-tagline" src={logoTagline} alt="MySchool tagline" />
         </div>
 
-        <section className="slide-partner-box">
+        <section className="slide-partner-box" aria-hidden="true">
           <div className="slide-partner-copy">
             <span>Be a partner of</span>
             <strong>AI Innovation lab</strong>
             <span>at your school</span>
           </div>
-          <img src={partnerGraphic} alt="AI Innovation lab graphic" />
+          <img src={partnerGraphic} alt="" />
         </section>
 
         <div className="slide-mid-band" />
@@ -68,45 +68,32 @@ export default function SlideCloneHome() {
             <button type="button">Download App</button>
             <button type="button">Sign up</button>
           </div>
-          <div className="slide-search-pill">Search your wish</div>
+          <div className="slide-search-pill" role="search" aria-label="Search your wish">
+            <span className="slide-search-icon">⌕</span>
+            <span>Search your wish</span>
+          </div>
         </section>
 
-        <div className="slide-left-arrow" />
+        <div className="slide-left-arrow" aria-hidden="true" />
 
-        <div className="slide-card card-top">
-          <img src={cardTop} alt="Classwise project resource" />
-        </div>
-
-        <div className="slide-card card-bottom">
-          <img src={cardBottom} alt="Printable resources" />
-        </div>
-
-        <div className="slide-card card-left-bottom">
-          <img src={cardLeftBottom} alt="Print resources free for teachers" />
-          <div className="slide-label slide-label-blue card-left-bottom-label">
-            <span>PRINT RESOURCES</span>
-            <strong>FREE FOR TEACHERS</strong>
-          </div>
-        </div>
-
-        <div className="slide-card card-far-left">
-          <img src={cardFarLeft} alt="AI enabled voice and video lessons" />
+        <div className="slide-card card-far-left" aria-hidden="true">
+          <img src={cardFarLeft} alt="" />
           <div className="slide-label card-far-left-label">
             <strong className="accent-blue">AI</strong>
-            <span> ENABLED VOICE</span>
-            <span>&amp; VIDEO LESSONS</span>
+            <span>ENABLED</span>
+            <span>VOICE &amp; VIDEO LESSONS</span>
           </div>
         </div>
 
-        <div className="slide-card card-mapped">
-          <img src={cardMapped} alt="FLN mapped printables" />
-          <div className="slide-label card-mapped-label">
+        <div className="slide-card card-mapped" aria-hidden="true">
+          <img src={cardMapped} alt="" />
+          <div className="slide-label slide-chip chip-white card-mapped-label">
             <span>FLN MAPPED</span>
             <strong>PRINTABLES</strong>
           </div>
         </div>
 
-        <div className="slide-card card-setup">
+        <div className="slide-card card-setup" aria-hidden="true">
           <div className="setup-grid">
             <span>S</span>
             <span>E</span>
@@ -119,31 +106,47 @@ export default function SlideCloneHome() {
           </div>
         </div>
 
-        <div className="slide-skill-tag slide-label">
-          <span>CHECK YOUR </span>
-          <strong className="accent-gold">SKILLS</strong>
-          <span> AND </span>
-          <strong className="accent-gold">UPGRADE</strong>
-          <span> EVERY MONTH</span>
+        <div className="slide-card card-left-bottom" aria-hidden="true">
+          <img src={cardLeftBottom} alt="" />
+          <div className="slide-label slide-chip chip-white card-left-bottom-label">
+            <span>PRINT RESOURCES</span>
+            <strong>FREE FOR TEACHERS</strong>
+          </div>
         </div>
 
-        <section className="slide-hero">
-          <img src={heroBanner} alt="Children at MySchool" />
+        <div className="slide-card card-top" aria-hidden="true">
+          <img src={cardTop} alt="" />
+        </div>
+
+        <div className="slide-skill-tag slide-chip chip-maroon" aria-hidden="true">
+          <span>CHECK YOUR</span>
+          <strong className="accent-gold">SKILLS</strong>
+          <span>AND</span>
+          <strong className="accent-gold">UPGRADE</strong>
+          <span>EVERY MONTH</span>
+        </div>
+
+        <div className="slide-card card-bottom" aria-hidden="true">
+          <img src={cardBottom} alt="" />
+        </div>
+
+        <div className="slide-classwise-tag slide-chip chip-ice" aria-hidden="true">
+          <strong>GET CLASS-WISE</strong>
+          <span className="accent-red">CUT &amp; PASTE</span>
+          <span>PROJECT RESOURCES EVERY MONTH</span>
+        </div>
+
+        <section className="slide-hero" aria-hidden="true">
+          <img src={heroBanner} alt="" />
         </section>
 
-        <div className="slide-hero-copy">
+        <div className="slide-hero-copy" aria-hidden="true">
           <span>CHILDREN AT MYSCHOOL EMBRACE</span>
           <span>EVERY MOMENT THROUGH</span>
           <strong>INNOVATION</strong>
         </div>
 
-        <div className="slide-classwise-tag slide-label">
-          <strong>GET CLASS-WISE</strong>
-          <span className="accent-red">CUT &amp; PASTE</span>
-          <span> PROJECT RESOURCES EVERY MONTH</span>
-        </div>
-
-        <nav className="slide-footer-links">
+        <nav className="slide-footer-links" aria-label="Footer links">
           <span>ABOUT US</span>
           <span>SERVICES</span>
           <span>GET INVOLVED</span>
@@ -151,11 +154,11 @@ export default function SlideCloneHome() {
           <span>TESTIMONIALS</span>
         </nav>
 
-        <div className="slide-quick-links">
+        <div className="slide-quick-links" aria-label="Categories">
           {quickLinks.map((item) => (
             <div className="quick-link" key={item.label}>
               <div className="quick-link-icon" style={{ backgroundColor: item.color }}>
-                <img src={item.icon} alt={item.label} />
+                <img src={item.icon} alt="" />
               </div>
               <span>{item.label}</span>
             </div>
